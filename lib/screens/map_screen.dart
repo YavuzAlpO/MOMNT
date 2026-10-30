@@ -79,11 +79,28 @@ class MapScreen extends StatelessWidget {
                     child: VenueSummaryCard(
                       key: const Key('map-venue-card'),
                       nearby: selected,
-                      onCheckIn: () => showCheckInSheet(
-                        context: context,
-                        controller: controller,
-                        venue: selected.venue,
-                      ),
+                      onCheckIn: () async {
+                        final allowed =
+                            await controller.startCheckIn(selected.venue);
+                        if (!context.mounted) return;
+                        if (!allowed) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Check-in için mekana 30 m içinde olmalısın.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        await presentCheckInForVenue(
+                          context: context,
+                          venue: selected.venue,
+                          distanceMeters:
+                              controller.selected?.distanceMeters ??
+                                  selected.distanceMeters,
+                        );
+                      },
                     ),
                   ),
                 ),

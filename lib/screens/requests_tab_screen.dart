@@ -27,7 +27,7 @@ class RequestsTabScreen extends StatelessWidget {
                   username: '@mertyilmaz',
                   venue: 'Moda Kahve',
                   time: '5 dk önce',
-                  status: '☕ Just Chillin\'',
+                  status: 'Kahve içiyorum',
                   avatarUrl:
                       'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150',
                 ),
@@ -36,7 +36,7 @@ class RequestsTabScreen extends StatelessWidget {
                   username: '@selinkaya',
                   venue: 'Espresso Lab',
                   time: '18 dk önce',
-                  status: '💬 Let\'s Talk',
+                  status: 'Sosyalleşiyorum',
                   avatarUrl:
                       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150',
                 ),

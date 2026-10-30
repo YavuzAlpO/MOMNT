@@ -1,35 +1,74 @@
 import 'package:flutter/material.dart';
-import '../models/check_in_mood.dart';
+import 'package:momnt/models/check_in_status.dart';
+import 'package:momnt/models/venue_model.dart';
+import 'package:momnt/state/check_in_controller.dart';
+
+Future<void> presentCheckInForVenue({
+  required BuildContext context,
+  required Venue venue,
+  required double distanceMeters,
+}) async {
+  final checkIn = CheckInScope.of(context);
+  final selected = await showCheckInSheet(
+    context: context,
+    venueName: venue.name,
+    initialStatus:
+        checkIn.isCheckedInAt(venue.id) ? checkIn.session?.status : null,
+  );
+  if (selected == null || !context.mounted) return;
+
+  final ok = checkIn.tryCheckIn(
+    venue: venue,
+    status: selected,
+    distanceMeters: distanceMeters,
+  );
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        ok
+            ? '${venue.name} · ${selected.label}'
+            : checkIn.lastError ?? 'Check-in yapılamadı.',
+      ),
+    ),
+  );
+}
+
+Future<CheckInStatus?> showCheckInSheet({
+  required BuildContext context,
+  required String venueName,
+  CheckInStatus? initialStatus,
+}) {
+  return showModalBottomSheet<CheckInStatus>(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (context) => CheckInSheet(
+      venueName: venueName,
+      initialStatus: initialStatus,
+    ),
+  );
+}
 
 class CheckInSheet extends StatefulWidget {
-  final String venueName;
-  final VoidCallback onCheckIn;
-
   const CheckInSheet({
     super.key,
     required this.venueName,
-    required this.onCheckIn,
+    this.initialStatus,
   });
+
+  final String venueName;
+  final CheckInStatus? initialStatus;
 
   @override
   State<CheckInSheet> createState() => _CheckInSheetState();
 }
 
 class _CheckInSheetState extends State<CheckInSheet> {
-  CheckInMood _selectedMood = CheckInMood.justChillin;
-
-  IconData _getIconForMood(CheckInMood mood) {
-    switch (mood) {
-      case CheckInMood.justChillin:
-        return Icons.coffee_outlined;
-      case CheckInMood.withMyCrew:
-        return Icons.groups_outlined;
-      case CheckInMood.openToMeet:
-        return Icons.waving_hand_outlined;
-      case CheckInMood.letsTalk:
-        return Icons.chat_bubble_outline;
-    }
-  }
+  late CheckInStatus _selectedStatus =
+      widget.initialStatus ?? CheckInStatus.drinkingCoffee;
 
   @override
   Widget build(BuildContext context) {
@@ -76,18 +115,21 @@ class _CheckInSheetState extends State<CheckInSheet> {
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           const SizedBox(height: 10),
-          ...CheckInMood.values.map((mood) {
-            final isSelected = _selectedMood == mood;
+          ...CheckInStatus.values.map((status) {
+            final isSelected = _selectedStatus == status;
             return Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
               child: InkWell(
-                onTap: () => setState(() => _selectedMood = mood),
+                onTap: () => setState(() => _selectedStatus = status),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF0F2167).withOpacity(0.08)
+                        ? const Color(0xFF0F2167).withValues(alpha: 0.08)
                         : Colors.grey[100],
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -100,7 +142,7 @@ class _CheckInSheetState extends State<CheckInSheet> {
                   child: Row(
                     children: [
                       Icon(
-                        _getIconForMood(mood),
+                        status.icon,
                         color: isSelected
                             ? const Color(0xFF0F2167)
                             : Colors.black54,
@@ -109,7 +151,7 @@ class _CheckInSheetState extends State<CheckInSheet> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          mood.label,
+                          status.label,
                           style: TextStyle(
                             fontWeight:
                                 isSelected ? FontWeight.bold : FontWeight.normal,
@@ -136,7 +178,7 @@ class _CheckInSheetState extends State<CheckInSheet> {
           }),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: widget.onCheckIn,
+            onPressed: () => Navigator.pop(context, _selectedStatus),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0F2167),
               padding: const EdgeInsets.symmetric(vertical: 14),

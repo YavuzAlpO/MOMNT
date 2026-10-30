@@ -68,11 +68,26 @@ class HomeScreen extends StatelessWidget {
               for (final nearby in controller.venues) ...[
                 VenueSummaryCard(
                   nearby: nearby,
-                  onCheckIn: () => showCheckInSheet(
-                    context: context,
-                    controller: controller,
-                    venue: nearby.venue,
-                  ),
+                  onCheckIn: () async {
+                    final allowed = await controller.startCheckIn(nearby.venue);
+                    if (!context.mounted) return;
+                    if (!allowed) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Check-in için mekana 30 m içinde olmalısın.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    await presentCheckInForVenue(
+                      context: context,
+                      venue: nearby.venue,
+                      distanceMeters: controller.selected?.distanceMeters ??
+                          nearby.distanceMeters,
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
               ],

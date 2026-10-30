@@ -1,168 +1,74 @@
 import 'package:flutter/material.dart';
-import 'package:momnt/models/check_in_mood.dart';
+import 'package:momnt/models/venue_model.dart';
+import 'package:momnt/state/check_in_controller.dart';
+import 'package:momnt/widgets/check_in_sheet.dart';
+import 'package:momnt/widgets/check_in_status_badge.dart';
+
+const _navy = Color(0xFF0F2167);
+
+const _modaKahve = Venue(
+  id: 'moda-kahve',
+  name: 'Moda Kahve',
+  category: 'Kafe',
+  latitude: 40.9875,
+  longitude: 29.0258,
+  activeUsersCount: 24,
+  address: 'Moda Cad., Kadıköy',
+  rating: 4.3,
+  friendsHereCount: 2,
+);
+
+/// Mock harita kartı: Moda Kahve, keşif örneğinde 30 m içinde.
+const _mockDistanceMeters = 18.0;
 
 class MapTabScreen extends StatelessWidget {
   const MapTabScreen({super.key});
 
-  void showCheckInSheet(BuildContext context, String venueName) {
-    showModalBottomSheet(
+  Future<void> _handleCheckIn(BuildContext context) async {
+    final controller = CheckInScope.of(context);
+    final selected = await showCheckInSheet(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: Column(
-                  children: [
-                    const CircleAvatar(
-                      radius: 30,
-                      backgroundImage: NetworkImage(
-                        'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=200',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Check-in Yap',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F2167),
-                      ),
-                    ),
-                    Text(
-                      venueName,
-                      style: const TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Anlık durumun',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 12),
-              ...CheckInMood.values.map(
-                (mood) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: mood == CheckInMood.justChillin
-                        ? const Color(0xFF0F2167).withOpacity(0.08)
-                        : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: mood == CheckInMood.justChillin
-                          ? const Color(0xFF0F2167)
-                          : Colors.transparent,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        mood.label,
-                        style: TextStyle(
-                          fontWeight: mood == CheckInMood.justChillin
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          fontSize: 15,
-                        ),
-                      ),
-                      Icon(
-                        mood == CheckInMood.justChillin
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                        color: mood == CheckInMood.justChillin
-                            ? const Color(0xFF0F2167)
-                            : Colors.grey,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.green, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Konumun uygun · 30 m içinde',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('$venueName\'de Check-in başlatıldı!'),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F2167),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Check-in\'i Başlat',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      venueName: _modaKahve.name,
+      initialStatus: controller.isCheckedInAt(_modaKahve.id)
+          ? controller.session?.status
+          : null,
     );
+    if (selected == null || !context.mounted) return;
+
+    final ok = controller.tryCheckIn(
+      venue: _modaKahve,
+      status: selected,
+      distanceMeters: _mockDistanceMeters,
+    );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? '${_modaKahve.name} · ${selected.label}'
+              : controller.lastError ?? 'Check-in yapılamadı.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleChangeStatus(BuildContext context) async {
+    final controller = CheckInScope.of(context);
+    final selected = await showCheckInSheet(
+      context: context,
+      venueName: _modaKahve.name,
+      initialStatus: controller.session?.status,
+    );
+    if (selected == null || !context.mounted) return;
+    controller.updateStatus(selected);
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = CheckInScope.of(context);
+    final checkedInHere = controller.isCheckedInAt(_modaKahve.id);
+    final session = controller.session;
+
     return Stack(
       children: [
         Container(
@@ -183,7 +89,7 @@ class MapTabScreen extends StatelessWidget {
             child: const TextField(
               decoration: InputDecoration(
                 hintText: 'Mekân ara',
-                prefixIcon: Icon(Icons.search, color: Color(0xFF0F2167)),
+                prefixIcon: Icon(Icons.search, color: _navy),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 16,
@@ -193,11 +99,30 @@ class MapTabScreen extends StatelessWidget {
             ),
           ),
         ),
+        if (session != null && !checkedInHere)
+          Positioned(
+            top: 88,
+            left: 16,
+            right: 16,
+            child: Card(
+              color: Colors.white,
+              child: ListTile(
+                dense: true,
+                leading: Icon(session.status.icon, color: _navy),
+                title: Text(
+                  session.venueName,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(session.status.label),
+              ),
+            ),
+          ),
         Positioned(
           bottom: 16,
           left: 16,
           right: 16,
           child: Card(
+            key: const Key('map-venue-card'),
             elevation: 8,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
@@ -216,6 +141,12 @@ class MapTabScreen extends StatelessWidget {
                           width: 60,
                           height: 60,
                           fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 60,
+                            height: 60,
+                            color: const Color(0xFFE2E8F0),
+                            child: const Icon(Icons.local_cafe, color: _navy),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -228,7 +159,7 @@ class MapTabScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
-                                color: Color(0xFF0F2167),
+                                color: _navy,
                               ),
                             ),
                             SizedBox(height: 2),
@@ -275,27 +206,42 @@ class MapTabScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (checkedInHere && session != null) ...[
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: CheckInStatusBadge(status: session.status),
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   SizedBox(
                     width: double.infinity,
                     height: 44,
                     child: ElevatedButton(
-                      onPressed: () => showCheckInSheet(context, 'Moda Kahve'),
+                      onPressed: () => checkedInHere
+                          ? _handleChangeStatus(context)
+                          : _handleCheckIn(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0F2167),
+                        backgroundColor: _navy,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Check-in Yap',
-                        style: TextStyle(
+                      child: Text(
+                        checkedInHere ? 'Statüyü Değiştir' : 'Check-in Yap',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
+                  if (checkedInHere)
+                    TextButton(
+                      onPressed: () =>
+                          CheckInScope.of(context).checkOut(),
+                      child: const Text('Check-out'),
+                    ),
                 ],
               ),
             ),

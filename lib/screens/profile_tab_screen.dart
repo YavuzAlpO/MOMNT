@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:momnt/models/profile_info.dart';
 import 'package:momnt/screens/edit_profile_screen.dart';
+import 'package:momnt/state/check_in_controller.dart';
+import 'package:momnt/widgets/active_check_in_card.dart';
+import 'package:momnt/widgets/check_in_sheet.dart';
 
 class ProfileTabScreen extends StatefulWidget {
   const ProfileTabScreen({super.key});
@@ -37,6 +40,9 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final checkIn = CheckInScope.of(context);
+    final session = checkIn.session;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -64,10 +70,26 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
           const SizedBox(height: 6),
           Text(_bio, style: const TextStyle(fontSize: 14)),
           const SizedBox(height: 4),
-          const Text(
-            '📍 0 check-in',
-            style: TextStyle(color: Colors.grey, fontSize: 13),
+          Text(
+            '📍 ${checkIn.lifetimeCheckInCount} check-in',
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
           ),
+          if (session != null) ...[
+            const SizedBox(height: 16),
+            ActiveCheckInCard(
+              session: session,
+              onChangeStatus: () async {
+                final selected = await showCheckInSheet(
+                  context: context,
+                  venueName: session.venueName,
+                  initialStatus: session.status,
+                );
+                if (selected == null || !mounted) return;
+                CheckInScope.of(context).updateStatus(selected);
+              },
+              onCheckOut: () => CheckInScope.of(context).checkOut(),
+            ),
+          ],
           const SizedBox(height: 20),
           Row(
             children: [

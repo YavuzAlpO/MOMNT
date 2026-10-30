@@ -1,39 +1,84 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:momnt/main.dart';
+import 'package:momnt/models/check_in_status.dart';
+import 'package:momnt/models/venue_model.dart';
 import 'package:momnt/services/location_service.dart';
 import 'package:momnt/services/venue_service.dart';
+import 'package:momnt/state/check_in_controller.dart';
+import 'package:momnt/widgets/active_check_in_card.dart';
+import 'package:momnt/widgets/check_in_sheet.dart';
+
+const _venue = Venue(
+  id: 'moda-kahve',
+  name: 'Moda Kahve',
+  category: 'Kafe',
+  latitude: 40.9875,
+  longitude: 29.0258,
+  activeUsersCount: 24,
+);
 
 void main() {
-  testWidgets('MOMNT kabuk, harita kartı ve check-in modalı', (tester) async {
-    await tester.pumpWidget(const MyApp());
-    await tester.pump();
+  testWidgets('check-in sheet örnek statüleri sunar ve seçimi döner', (
+    tester,
+  ) async {
+    CheckInStatus? selected;
 
-    expect(find.text('Ana Sayfa'), findsOneWidget);
-    expect(find.text('Harita'), findsOneWidget);
-    expect(find.text('İstekler'), findsOneWidget);
-    expect(find.text('Mesajlar'), findsOneWidget);
-    expect(find.text('Profil'), findsOneWidget);
-    expect(find.text('Moda Kahve'), findsWidgets);
-    expect(find.text('24 kişi'), findsWidgets);
-    expect(find.text('30 m içinde'), findsWidgets);
-
-    await tester.tap(find.text('Harita'));
-    await tester.pumpAndSettle();
-    expect(find.text('Mekân ara'), findsOneWidget);
-    expect(find.text('Check-in Yap'), findsWidgets);
-
-    await tester.tap(
-      find.descendant(
-        of: find.byKey(const Key('map-venue-card')),
-        matching: find.text('Check-in Yap'),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            return TextButton(
+              onPressed: () async {
+                selected = await showCheckInSheet(
+                  context: context,
+                  venueName: 'Moda Kahve',
+                );
+              },
+              child: const Text('open'),
+            );
+          },
+        ),
       ),
     );
+
+    await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    expect(find.text("Just Chillin'"), findsOneWidget);
-    expect(find.text('With My Crew'), findsOneWidget);
-    expect(find.text('Open to Meet'), findsOneWidget);
-    expect(find.text("Check-in'i Başlat"), findsOneWidget);
+
+    expect(find.text('Kahve içiyorum'), findsOneWidget);
+    expect(find.text('Çalışıyorum'), findsOneWidget);
+    expect(find.text('Sosyalleşiyorum'), findsOneWidget);
+    expect(find.text('Tanışmaya açığım'), findsOneWidget);
+
+    await tester.tap(find.text('Çalışıyorum'));
+    await tester.tap(find.text("Check-in'i Başlat"));
+    await tester.pumpAndSettle();
+
+    expect(selected, CheckInStatus.working);
+  });
+
+  testWidgets('aktif check-in kartı mekan ve statüyü gösterir', (tester) async {
+    final controller = CheckInController();
+    controller.tryCheckIn(
+      venue: _venue,
+      status: CheckInStatus.socializing,
+      distanceMeters: 18,
+    );
+
+    await tester.pumpWidget(
+      CheckInScope(
+        controller: controller,
+        child: MaterialApp(
+          home: Scaffold(
+            body: ActiveCheckInCard(session: controller.session!),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Moda Kahve'), findsOneWidget);
+    expect(find.text('Sosyalleşiyorum'), findsOneWidget);
+    expect(find.text('Şu an buradasın'), findsOneWidget);
+    controller.dispose();
   });
 
   test('20 km dışındaki mock mekan keşif listesine girmez', () {

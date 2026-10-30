@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:momnt/models/check_in_mood.dart';
+import 'package:momnt/models/check_in_status.dart';
+import 'package:momnt/state/check_in_controller.dart';
+import 'package:momnt/widgets/active_check_in_card.dart';
+import 'package:momnt/widgets/check_in_status_badge.dart';
 
 const _navy = Color(0xFF0F2167);
 
@@ -13,7 +16,7 @@ class HomeTabScreen extends StatelessWidget {
       venue: 'Moda Kahve',
       venueArea: 'Moda Cad., Kadıköy',
       timeAgo: '8 dk önce',
-      mood: CheckInMood.justChillin,
+      mood: CheckInStatus.drinkingCoffee,
       avatarUrl:
           'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200',
       venueImageUrl:
@@ -25,7 +28,7 @@ class HomeTabScreen extends StatelessWidget {
       venue: 'Espresso Lab',
       venueArea: 'Bahariye, Kadıköy',
       timeAgo: '22 dk önce',
-      mood: CheckInMood.letsTalk,
+      mood: CheckInStatus.socializing,
       avatarUrl:
           'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200',
       venueImageUrl:
@@ -37,7 +40,7 @@ class HomeTabScreen extends StatelessWidget {
       venue: 'Moda Kahve',
       venueArea: 'Moda Cad., Kadıköy',
       timeAgo: '41 dk önce',
-      mood: CheckInMood.openToMeet,
+      mood: CheckInStatus.openToMeet,
       avatarUrl:
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200',
       venueImageUrl:
@@ -49,7 +52,7 @@ class HomeTabScreen extends StatelessWidget {
       venue: 'Fenerbahçe Parkı',
       venueArea: 'Fenerbahçe, Kadıköy',
       timeAgo: '2 sa önce',
-      mood: CheckInMood.withMyCrew,
+      mood: CheckInStatus.working,
       avatarUrl:
           'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200',
       venueImageUrl:
@@ -59,6 +62,8 @@ class HomeTabScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final session = CheckInScope.of(context).session;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Column(
@@ -77,6 +82,10 @@ class HomeTabScreen extends StatelessWidget {
             'Arkadaşlarının anlık check-in’leri',
             style: TextStyle(color: Colors.grey[600], fontSize: 14),
           ),
+          if (session != null) ...[
+            const SizedBox(height: 16),
+            ActiveCheckInCard(session: session),
+          ],
           const SizedBox(height: 16),
           Expanded(
             child: ListView.separated(
@@ -109,7 +118,7 @@ class _FeedCheckIn {
   final String venue;
   final String venueArea;
   final String timeAgo;
-  final CheckInMood mood;
+  final CheckInStatus mood;
   final String avatarUrl;
   final String venueImageUrl;
 }
@@ -239,29 +248,7 @@ class _FeedCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: _navy.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: _navy.withOpacity(0.22)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(item.mood.icon, size: 16, color: _navy),
-                  const SizedBox(width: 6),
-                  Text(
-                    item.mood.label,
-                    style: const TextStyle(
-                      color: _navy,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            CheckInStatusBadge(status: item.mood),
           ],
         ),
       ),

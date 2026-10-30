@@ -4,29 +4,46 @@ import 'package:momnt/screens/map_tab_screen.dart';
 import 'package:momnt/screens/messages_tab_screen.dart';
 import 'package:momnt/screens/profile_tab_screen.dart';
 import 'package:momnt/screens/requests_tab_screen.dart';
+import 'package:momnt/state/check_in_controller.dart';
 
 void main() {
   runApp(const MomntApp());
 }
 
-class MomntApp extends StatelessWidget {
+class MomntApp extends StatefulWidget {
   const MomntApp({super.key});
 
   @override
+  State<MomntApp> createState() => _MomntAppState();
+}
+
+class _MomntAppState extends State<MomntApp> {
+  late final CheckInController _checkInController = CheckInController();
+
+  @override
+  void dispose() {
+    _checkInController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'MOMNT',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        primaryColor: const Color(0xFF0F2167),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0F2167),
-          primary: const Color(0xFF0F2167),
+    return CheckInScope(
+      controller: _checkInController,
+      child: MaterialApp(
+        title: 'MOMNT',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+          primaryColor: const Color(0xFF0F2167),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF0F2167),
+            primary: const Color(0xFF0F2167),
+          ),
+          useMaterial3: true,
         ),
-        useMaterial3: true,
+        home: const MainNavigationScreen(),
       ),
-      home: const MainNavigationScreen(),
     );
   }
 }
