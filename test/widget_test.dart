@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:momnt/models/check_in_duration.dart';
 import 'package:momnt/models/check_in_status.dart';
 import 'package:momnt/models/venue_model.dart';
 import 'package:momnt/services/location_service.dart';
@@ -18,10 +19,8 @@ const _venue = Venue(
 );
 
 void main() {
-  testWidgets('check-in sheet örnek statüleri sunar ve seçimi döner', (
-    tester,
-  ) async {
-    CheckInStatus? selected;
+  testWidgets('check-in sheet statü ve süre seçimini döner', (tester) async {
+    CheckInSelection? selected;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -45,23 +44,62 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Kahve içiyorum'), findsOneWidget);
-    expect(find.text('Çalışıyorum'), findsOneWidget);
-    expect(find.text('Sosyalleşiyorum'), findsOneWidget);
-    expect(find.text('Tanışmaya açığım'), findsOneWidget);
+    expect(find.text('1 saat'), findsOneWidget);
+    expect(find.text('3 saat'), findsOneWidget);
+    expect(find.text('1 gün'), findsOneWidget);
+    expect(find.text('Süresiz'), findsOneWidget);
 
     await tester.tap(find.text('Çalışıyorum'));
+    await tester.tap(find.text('3 saat'));
     await tester.tap(find.text("Check-in'i Başlat"));
     await tester.pumpAndSettle();
 
-    expect(selected, CheckInStatus.working);
+    expect(selected?.status, CheckInStatus.working);
+    expect(selected?.duration, CheckInDuration.threeHours);
   });
 
-  testWidgets('aktif check-in kartı mekan ve statüyü gösterir', (tester) async {
+  testWidgets('aktif kart geri sayım ve bitir butonunu gösterir', (tester) async {
     final controller = CheckInController();
     controller.tryCheckIn(
       venue: _venue,
       status: CheckInStatus.socializing,
       distanceMeters: 18,
+      now: DateTime.now(),
+    );
+
+    await tester.pumpWidget(
+      CheckInScope(
+        controller: controller,
+        child: MaterialApp(
+          home: Scaffold(
+            body: ActiveCheckInCard(
+              session: controller.session!,
+              onCheckOut: controller.endCheckIn,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Moda Kahve'), findsOneWidget);
+    expect(find.text('Sosyalleşiyorum'), findsOneWidget);
+    expect(find.textContaining('Kalan süre'), findsOneWidget);
+    expect(find.text("Check-in'i Bitir"), findsOneWidget);
+
+    await tester.tap(find.text("Check-in'i Bitir"));
+    await tester.pump();
+    expect(controller.session, isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
+  testWidgets('süresiz check-in aktif durum gösterir', (tester) async {
+    final controller = CheckInController();
+    controller.tryCheckIn(
+      venue: _venue,
+      status: CheckInStatus.working,
+      distanceMeters: 18,
+      duration: CheckInDuration.unlimited,
     );
 
     await tester.pumpWidget(
@@ -75,9 +113,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Moda Kahve'), findsOneWidget);
-    expect(find.text('Sosyalleşiyorum'), findsOneWidget);
-    expect(find.text('Şu an buradasın'), findsOneWidget);
+    expect(find.text('Aktif · süresiz'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
   });
 

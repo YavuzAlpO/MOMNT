@@ -25,7 +25,7 @@ class MapTabScreen extends StatelessWidget {
   const MapTabScreen({super.key});
 
   Future<void> _handleCheckIn(BuildContext context) async {
-    final controller = CheckInScope.of(context);
+    final controller = CheckInScope.read(context);
     final selected = await showCheckInSheet(
       context: context,
       venueName: _modaKahve.name,
@@ -37,7 +37,8 @@ class MapTabScreen extends StatelessWidget {
 
     final ok = controller.tryCheckIn(
       venue: _modaKahve,
-      status: selected,
+      status: selected.status,
+      duration: selected.duration,
       distanceMeters: _mockDistanceMeters,
     );
     if (!context.mounted) return;
@@ -45,7 +46,7 @@ class MapTabScreen extends StatelessWidget {
       SnackBar(
         content: Text(
           ok
-              ? '${_modaKahve.name} · ${selected.label}'
+              ? '${_modaKahve.name} · ${selected.status.label}'
               : controller.lastError ?? 'Check-in yapılamadı.',
         ),
       ),
@@ -53,14 +54,15 @@ class MapTabScreen extends StatelessWidget {
   }
 
   Future<void> _handleChangeStatus(BuildContext context) async {
-    final controller = CheckInScope.of(context);
+    final controller = CheckInScope.read(context);
     final selected = await showCheckInSheet(
       context: context,
       venueName: _modaKahve.name,
       initialStatus: controller.session?.status,
+      showDurationPicker: false,
     );
     if (selected == null || !context.mounted) return;
-    controller.updateStatus(selected);
+    controller.updateStatus(selected.status);
   }
 
   @override
@@ -239,8 +241,8 @@ class MapTabScreen extends StatelessWidget {
                   if (checkedInHere)
                     TextButton(
                       onPressed: () =>
-                          CheckInScope.of(context).checkOut(),
-                      child: const Text('Check-out'),
+                          CheckInScope.read(context).endCheckIn(),
+                      child: const Text("Check-in'i Bitir"),
                     ),
                 ],
               ),

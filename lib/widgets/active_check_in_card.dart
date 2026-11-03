@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:momnt/models/check_in_session.dart';
+import 'package:momnt/utils/formatters.dart';
 import 'package:momnt/widgets/check_in_status_badge.dart';
 
-class ActiveCheckInCard extends StatelessWidget {
+class ActiveCheckInCard extends StatefulWidget {
   const ActiveCheckInCard({
     super.key,
     required this.session,
@@ -14,10 +17,48 @@ class ActiveCheckInCard extends StatelessWidget {
   final VoidCallback? onChangeStatus;
   final VoidCallback? onCheckOut;
 
+  @override
+  State<ActiveCheckInCard> createState() => _ActiveCheckInCardState();
+}
+
+class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
   static const _navy = Color(0xFF0F2167);
+  Timer? _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncTicker();
+  }
+
+  @override
+  void didUpdateWidget(covariant ActiveCheckInCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.session.isUnlimited != widget.session.isUnlimited ||
+        oldWidget.session.expiresAt != widget.session.expiresAt) {
+      _syncTicker();
+    }
+  }
+
+  void _syncTicker() {
+    _tick?.cancel();
+    if (widget.session.isUnlimited) return;
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final session = widget.session;
+    final remaining = session.remaining();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -48,25 +89,84 @@ class ActiveCheckInCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           CheckInStatusBadge(status: session.status),
-          if (onChangeStatus != null || onCheckOut != null) ...[
-            const SizedBox(height: 12),
+          const SizedBox(height: 10),
+          _LifecycleBanner(session: session, remaining: remaining),
+          if (widget.onChangeStatus != null || widget.onCheckOut != null) ...[
+            const SizedBox(height: 8),
             Row(
               children: [
-                if (onChangeStatus != null)
+                if (widget.onChangeStatus != null)
                   TextButton(
-                    onPressed: onChangeStatus,
+                    onPressed: widget.onChangeStatus,
                     child: const Text('Statüyü değiştir'),
                   ),
-                if (onCheckOut != null)
-                  TextButton(
-                    onPressed: onCheckOut,
-                    child: const Text('Check-out'),
+                if (widget.onCheckOut != null)
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton(
+                        onPressed: widget.onCheckOut,
+                        child: const Text("Check-in'i Bitir"),
+                      ),
+                    ),
                   ),
               ],
             ),
           ],
         ],
       ),
+    );
+  }
+}
+
+class _LifecycleBanner extends StatelessWidget {
+  const _LifecycleBanner({
+    required this.session,
+    required this.remaining,
+  });
+
+  final CheckInSession session;
+  final Duration remaining;
+
+  static const _navy = Color(0xFF0F2167);
+
+  @override
+  Widget build(BuildContext context) {
+    if (session.isUnlimited) {
+      return const Row(
+        children: [
+          Icon(Icons.bolt, size: 18, color: _navy),
+          SizedBox(width: 6),
+          Text(
+            'Aktif · süresiz',
+            style: TextStyle(
+              color: _navy,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Kalan süre ${formatCountdown(remaining)}',
+          style: const TextStyle(
+            color: _navy,
+            fontWeight: FontWeight.w800,
+            fontSize: 15,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          session.autoExtendCount > 0
+              ? '${session.duration.label} · ${session.autoExtendCount} kez uzatıldı'
+              : session.duration.label,
+          style: const TextStyle(color: Colors.grey, fontSize: 12),
+        ),
+      ],
     );
   }
 }

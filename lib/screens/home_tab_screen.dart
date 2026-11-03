@@ -84,7 +84,10 @@ class HomeTabScreen extends StatelessWidget {
           ),
           if (session != null) ...[
             const SizedBox(height: 16),
-            ActiveCheckInCard(session: session),
+            ActiveCheckInCard(
+              session: session,
+              onCheckOut: () => CheckInScope.read(context).endCheckIn(),
+            ),
           ],
           const SizedBox(height: 16),
           Expanded(

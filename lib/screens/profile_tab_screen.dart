@@ -83,11 +83,12 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
                   context: context,
                   venueName: session.venueName,
                   initialStatus: session.status,
+                  showDurationPicker: false,
                 );
                 if (selected == null || !mounted) return;
-                CheckInScope.of(context).updateStatus(selected);
+                CheckInScope.read(context).updateStatus(selected.status);
               },
-              onCheckOut: () => CheckInScope.of(context).checkOut(),
+              onCheckOut: () => CheckInScope.read(context).endCheckIn(),
             ),
           ],
           const SizedBox(height: 20),

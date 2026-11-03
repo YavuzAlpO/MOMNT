@@ -1,25 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/models/check_in_duration.dart';
 import 'package:momnt/models/check_in_status.dart';
 import 'package:momnt/models/venue_model.dart';
 import 'package:momnt/state/check_in_controller.dart';
+
+class CheckInSelection {
+  const CheckInSelection({
+    required this.status,
+    this.duration = CheckInDuration.defaultValue,
+  });
+
+  final CheckInStatus status;
+  final CheckInDuration duration;
+}
 
 Future<void> presentCheckInForVenue({
   required BuildContext context,
   required Venue venue,
   required double distanceMeters,
 }) async {
-  final checkIn = CheckInScope.of(context);
+  final checkIn = CheckInScope.read(context);
   final selected = await showCheckInSheet(
     context: context,
     venueName: venue.name,
     initialStatus:
         checkIn.isCheckedInAt(venue.id) ? checkIn.session?.status : null,
+    initialDuration: checkIn.session?.duration,
   );
   if (selected == null || !context.mounted) return;
 
   final ok = checkIn.tryCheckIn(
     venue: venue,
-    status: selected,
+    status: selected.status,
+    duration: selected.duration,
     distanceMeters: distanceMeters,
   );
   if (!context.mounted) return;
@@ -27,19 +40,21 @@ Future<void> presentCheckInForVenue({
     SnackBar(
       content: Text(
         ok
-            ? '${venue.name} · ${selected.label}'
+            ? '${venue.name} · ${selected.status.label}'
             : checkIn.lastError ?? 'Check-in yapılamadı.',
       ),
     ),
   );
 }
 
-Future<CheckInStatus?> showCheckInSheet({
+Future<CheckInSelection?> showCheckInSheet({
   required BuildContext context,
   required String venueName,
   CheckInStatus? initialStatus,
+  CheckInDuration? initialDuration,
+  bool showDurationPicker = true,
 }) {
-  return showModalBottomSheet<CheckInStatus>(
+  return showModalBottomSheet<CheckInSelection>(
     context: context,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
@@ -48,6 +63,8 @@ Future<CheckInStatus?> showCheckInSheet({
     builder: (context) => CheckInSheet(
       venueName: venueName,
       initialStatus: initialStatus,
+      initialDuration: initialDuration,
+      showDurationPicker: showDurationPicker,
     ),
   );
 }
@@ -57,10 +74,14 @@ class CheckInSheet extends StatefulWidget {
     super.key,
     required this.venueName,
     this.initialStatus,
+    this.initialDuration,
+    this.showDurationPicker = true,
   });
 
   final String venueName;
   final CheckInStatus? initialStatus;
+  final CheckInDuration? initialDuration;
+  final bool showDurationPicker;
 
   @override
   State<CheckInSheet> createState() => _CheckInSheetState();
@@ -69,6 +90,8 @@ class CheckInSheet extends StatefulWidget {
 class _CheckInSheetState extends State<CheckInSheet> {
   late CheckInStatus _selectedStatus =
       widget.initialStatus ?? CheckInStatus.drinkingCoffee;
+  late CheckInDuration _selectedDuration =
+      widget.initialDuration ?? CheckInDuration.defaultValue;
 
   @override
   Widget build(BuildContext context) {
@@ -79,10 +102,11 @@ class _CheckInSheetState extends State<CheckInSheet> {
         top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           Center(
             child: Container(
               width: 36,
@@ -176,9 +200,43 @@ class _CheckInSheetState extends State<CheckInSheet> {
               ),
             );
           }),
+          if (widget.showDurationPicker) ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Ne kadar kalacaksın?',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final duration in CheckInDuration.values)
+                  ChoiceChip(
+                    label: Text(duration.label),
+                    selected: _selectedDuration == duration,
+                    selectedColor: const Color(0xFF0F2167).withValues(alpha: 0.12),
+                    labelStyle: TextStyle(
+                      color: const Color(0xFF0F2167),
+                      fontWeight: _selectedDuration == duration
+                          ? FontWeight.w800
+                          : FontWeight.w500,
+                    ),
+                    onSelected: (_) =>
+                        setState(() => _selectedDuration = duration),
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, _selectedStatus),
+            onPressed: () => Navigator.pop(
+              context,
+              CheckInSelection(
+                status: _selectedStatus,
+                duration: _selectedDuration,
+              ),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0F2167),
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -196,6 +254,7 @@ class _CheckInSheetState extends State<CheckInSheet> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

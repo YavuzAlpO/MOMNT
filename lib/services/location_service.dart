@@ -15,6 +15,15 @@ abstract final class MomntLocationRules {
   static const Duration sessionTimeout = Duration(hours: 4);
 }
 
+/// Aktif check-in yaşam döngüsü (K-036, K-145, K-147).
+abstract final class CheckInLifecycleRules {
+  /// Süre bitimine bu kadar kala konum kontrolü yapılır (K-145).
+  static const Duration autoExtendWindow = Duration(minutes: 5);
+
+  /// Mekândaysa süre bu kadar uzatılır (K-145).
+  static const Duration autoExtendBy = Duration(hours: 1);
+}
+
 class LocationPermissionException implements Exception {
   const LocationPermissionException(this.message);
 
