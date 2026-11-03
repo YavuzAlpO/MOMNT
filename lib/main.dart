@@ -6,6 +6,9 @@ import 'package:momnt/screens/profile_tab_screen.dart';
 import 'package:momnt/screens/requests_tab_screen.dart';
 import 'package:momnt/state/check_in_controller.dart';
 import 'package:momnt/widgets/check_in_manager_sheet.dart';
+import 'package:momnt/services/demo_social_data.dart';
+import 'package:momnt/state/messages_controller.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   runApp(const MomntApp());
@@ -31,19 +34,22 @@ class _MomntAppState extends State<MomntApp> {
   Widget build(BuildContext context) {
     return CheckInScope(
       controller: _checkInController,
-      child: MaterialApp(
-        title: 'MOMNT',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-          primaryColor: const Color(0xFF0F2167),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF0F2167),
-            primary: const Color(0xFF0F2167),
+      child: ChangeNotifierProvider<MessagesController>(
+        create: (_) => MessagesController.demo(contacts: demoMutualFollows),
+        child: MaterialApp(
+          title: 'MOMNT',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+            primaryColor: const Color(0xFF0F2167),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF0F2167),
+              primary: const Color(0xFF0F2167),
+            ),
+            useMaterial3: true,
           ),
-          useMaterial3: true,
+          home: const MainNavigationScreen(),
         ),
-        home: const MainNavigationScreen(),
       ),
     );
   }
