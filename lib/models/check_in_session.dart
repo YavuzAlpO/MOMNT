@@ -26,8 +26,6 @@ class CheckInSession {
   final DateTime? expiresAt;
   final int autoExtendCount;
 
-  bool get isUnlimited => duration.isUnlimited;
-
   bool isAtVenue(String venueId) => this.venueId == venueId;
 
   Duration remaining({DateTime? now}) {
@@ -36,12 +34,12 @@ class CheckInSession {
   }
 
   bool isExpired({DateTime? now}) {
-    if (isUnlimited || expiresAt == null) return false;
+    if (expiresAt == null) return false;
     return !expiresAt!.isAfter(now ?? DateTime.now());
   }
 
   bool isWithinAutoExtendWindow({DateTime? now}) {
-    if (isUnlimited || expiresAt == null) return false;
+    if (expiresAt == null) return false;
     final left = remaining(now: now);
     return left > Duration.zero &&
         left <= CheckInLifecycleRules.autoExtendWindow;

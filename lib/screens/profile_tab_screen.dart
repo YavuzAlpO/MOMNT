@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:momnt/models/profile_info.dart';
+import 'package:momnt/services/demo_social_data.dart';
 import 'package:momnt/screens/edit_profile_screen.dart';
 import 'package:momnt/state/check_in_controller.dart';
 import 'package:momnt/widgets/active_check_in_card.dart';
@@ -21,11 +22,8 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
     final updated = await Navigator.push<ProfileInfo>(
       context,
       MaterialPageRoute(
-        builder: (_) => EditProfileScreen(
-          name: _name,
-          username: _username,
-          bio: _bio,
-        ),
+        builder: (_) =>
+            EditProfileScreen(name: _name, username: _username, bio: _bio),
       ),
     );
 
@@ -78,16 +76,8 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
             const SizedBox(height: 16),
             ActiveCheckInCard(
               session: session,
-              onChangeStatus: () async {
-                final selected = await showCheckInSheet(
-                  context: context,
-                  venueName: session.venueName,
-                  initialStatus: session.status,
-                  showDurationPicker: false,
-                );
-                if (selected == null || !mounted) return;
-                CheckInScope.read(context).updateStatus(selected.status);
-              },
+              mutualFollows: demoMutualFollows,
+              onChangeStatus: () => presentCheckInEdit(context: context),
               onCheckOut: () => CheckInScope.read(context).endCheckIn(),
             ),
           ],

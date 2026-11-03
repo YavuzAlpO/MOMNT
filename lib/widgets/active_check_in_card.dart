@@ -2,18 +2,22 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:momnt/models/check_in_session.dart';
+import 'package:momnt/models/mutual_follow_profile.dart';
 import 'package:momnt/utils/formatters.dart';
 import 'package:momnt/widgets/check_in_status_badge.dart';
+import 'package:momnt/widgets/mutual_follow_avatars.dart';
 
 class ActiveCheckInCard extends StatefulWidget {
   const ActiveCheckInCard({
     super.key,
     required this.session,
+    this.mutualFollows = const [],
     this.onChangeStatus,
     this.onCheckOut,
   });
 
   final CheckInSession session;
+  final List<MutualFollowProfile> mutualFollows;
   final VoidCallback? onChangeStatus;
   final VoidCallback? onCheckOut;
 
@@ -34,15 +38,13 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
   @override
   void didUpdateWidget(covariant ActiveCheckInCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.session.isUnlimited != widget.session.isUnlimited ||
-        oldWidget.session.expiresAt != widget.session.expiresAt) {
+    if (oldWidget.session.expiresAt != widget.session.expiresAt) {
       _syncTicker();
     }
   }
 
   void _syncTicker() {
     _tick?.cancel();
-    if (widget.session.isUnlimited) return;
     _tick = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -70,13 +72,26 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Şu an buradasın',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: [
+              const Flexible(
+                child: Text(
+                  'Şu an buradasın',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (widget.mutualFollows.isNotEmpty) ...[
+                const SizedBox(width: 10),
+                Flexible(
+                  flex: 2,
+                  child: MutualFollowAvatars(profiles: widget.mutualFollows),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 4),
           Text(
@@ -120,10 +135,7 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
 }
 
 class _LifecycleBanner extends StatelessWidget {
-  const _LifecycleBanner({
-    required this.session,
-    required this.remaining,
-  });
+  const _LifecycleBanner({required this.session, required this.remaining});
 
   final CheckInSession session;
   final Duration remaining;
@@ -132,22 +144,6 @@ class _LifecycleBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (session.isUnlimited) {
-      return const Row(
-        children: [
-          Icon(Icons.bolt, size: 18, color: _navy),
-          SizedBox(width: 6),
-          Text(
-            'Aktif · süresiz',
-            style: TextStyle(
-              color: _navy,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      );
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

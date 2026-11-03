@@ -24,8 +24,8 @@ class CheckInController extends ChangeNotifier {
   CheckInController({
     LocationService locationService = const LocationService(),
     VenuePresenceCheck presenceCheck = hypotheticalIsStillAtVenue,
-  })  : _locationService = locationService,
-        _presenceCheck = presenceCheck;
+  }) : _locationService = locationService,
+       _presenceCheck = presenceCheck;
 
   final LocationService _locationService;
   final VenuePresenceCheck _presenceCheck;
@@ -60,13 +60,17 @@ class CheckInController extends ChangeNotifier {
     }
 
     final clock = now ?? DateTime.now();
+    if (isCheckedInAt(venue.id)) {
+      return updateStatus(status, duration: duration, now: clock);
+    }
     final isNewSession = session?.isAtVenue(venue.id) != true;
-    final checkedInAt =
-        isNewSession ? clock : session!.checkedInAt;
-    final selectedDuration =
-        isNewSession ? duration : session!.duration;
+    final checkedInAt = isNewSession ? clock : session!.checkedInAt;
+    final selectedDuration = isNewSession ? duration : session!.duration;
     final expiresAt = isNewSession
-        ? selectedDuration.expiresAtFrom(checkedInAt)
+        ? _limitedExpiry(
+            selectedDuration.expiresAtFrom(checkedInAt),
+            checkedInAt,
+          )
         : session!.expiresAt;
 
     session = CheckInSession(
@@ -124,29 +128,69 @@ class CheckInController extends ChangeNotifier {
     }
   }
 
-  void updateStatus(CheckInStatus status) {
-    if (session == null) return;
-    session = session!.copyWith(status: status);
+  /// Süre değiştiğinde yeni süre şimdi başlar; toplam oturum 4 saati aşmaz.
+  /// Yalnızca statü değiştiğinde mevcut bitiş zamanı korunur.
+  bool updateStatus(
+    CheckInStatus status, {
+    CheckInDuration? duration,
+    DateTime? now,
+    CheckInSession? expectedSession,
+  }) {
+    final current = session;
+    if (current == null) return false;
+    if (expectedSession != null &&
+        (current.venueId != expectedSession.venueId ||
+            current.checkedInAt != expectedSession.checkedInAt)) {
+      return false;
+    }
+    final clock = now ?? DateTime.now();
+    if (current.isExpired(now: clock)) {
+      checkOut(reason: CheckOutReason.timeout);
+      return false;
+    }
+    final durationChanged = duration != null && duration != current.duration;
+    session = current.copyWith(
+      status: status,
+      duration: duration,
+      expiresAt: durationChanged
+          ? _limitedExpiry(duration.expiresAtFrom(clock), current.checkedInAt)
+          : current.expiresAt,
+      autoExtendCount: durationChanged ? 0 : current.autoExtendCount,
+    );
+    lastNotice = null;
+    _scheduleLifecycle(now: clock);
     notifyListeners();
+    return true;
+  }
+
+  DateTime _limitedExpiry(DateTime? requested, DateTime checkedInAt) {
+    final deadline = checkedInAt.add(MomntLocationRules.sessionTimeout);
+    return requested == null || requested.isAfter(deadline)
+        ? deadline
+        : requested;
   }
 
   /// K-145: süre bitimine 5 dk kala mekândaysa oturumu 1 saat uzatır.
-  Future<bool> checkAutoExtend({
-    DateTime? now,
-    bool? stillAtVenue,
-  }) async {
+  Future<bool> checkAutoExtend({DateTime? now, bool? stillAtVenue}) async {
     final current = session;
-    if (current == null || current.isUnlimited) return false;
+    if (current == null) return false;
     if (!current.isWithinAutoExtendWindow(now: now)) return false;
 
-    final present =
-        stillAtVenue ?? await _presenceCheck(current);
-    if (session == null) return false;
+    final present = stillAtVenue ?? await _presenceCheck(current);
+    if (!identical(session, current)) return false;
     if (!present) return false;
 
     final clock = now ?? DateTime.now();
+    final expiresAt = _limitedExpiry(
+      current.expiresAt!.add(CheckInLifecycleRules.autoExtendBy),
+      current.checkedInAt,
+    );
+    if (!expiresAt.isAfter(current.expiresAt!) ||
+        current.isExpired(now: clock)) {
+      return false;
+    }
     session = current.copyWith(
-      expiresAt: current.expiresAt!.add(CheckInLifecycleRules.autoExtendBy),
+      expiresAt: expiresAt,
       autoExtendCount: current.autoExtendCount + 1,
     );
     lastNotice = 'Mekânda olduğun için süre 1 saat uzatıldı.';
@@ -171,8 +215,8 @@ class CheckInController extends ChangeNotifier {
       return;
     }
     if (session!.isWithinAutoExtendWindow(now: now)) {
-      final atVenue = stillAtVenue ??
-          _locationService.canCheckIn(distanceMeters);
+      final atVenue =
+          stillAtVenue ?? _locationService.canCheckIn(distanceMeters);
       await checkAutoExtend(now: now, stillAtVenue: atVenue);
     }
   }
@@ -201,7 +245,7 @@ class CheckInController extends ChangeNotifier {
     _timeoutTimer?.cancel();
     _extendTimer?.cancel();
     final current = session;
-    if (current == null || current.isUnlimited || current.expiresAt == null) {
+    if (current == null || current.expiresAt == null) {
       return;
     }
 
@@ -222,7 +266,7 @@ class CheckInController extends ChangeNotifier {
 
     _timeoutTimer = Timer(remaining, () {
       final live = session;
-      if (live == null || live.isUnlimited) return;
+      if (live == null) return;
       if (live.isExpired()) {
         checkOut(reason: CheckOutReason.timeout);
       }

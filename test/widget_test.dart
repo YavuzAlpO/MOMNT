@@ -45,20 +45,22 @@ void main() {
 
     expect(find.text('Kahve içiyorum'), findsOneWidget);
     expect(find.text('1 saat'), findsOneWidget);
-    expect(find.text('3 saat'), findsOneWidget);
-    expect(find.text('1 gün'), findsOneWidget);
-    expect(find.text('Süresiz'), findsOneWidget);
+    expect(find.text('2 saat'), findsOneWidget);
+    expect(find.text('30 dk'), findsOneWidget);
+    expect(find.text('4 saat'), findsOneWidget);
 
     await tester.tap(find.text('Çalışıyorum'));
-    await tester.tap(find.text('3 saat'));
+    await tester.tap(find.text('2 saat'));
     await tester.tap(find.text("Check-in'i Başlat"));
     await tester.pumpAndSettle();
 
     expect(selected?.status, CheckInStatus.working);
-    expect(selected?.duration, CheckInDuration.threeHours);
+    expect(selected?.duration, CheckInDuration.twoHours);
   });
 
-  testWidgets('aktif kart geri sayım ve bitir butonunu gösterir', (tester) async {
+  testWidgets('aktif kart geri sayım ve bitir butonunu gösterir', (
+    tester,
+  ) async {
     final controller = CheckInController();
     controller.tryCheckIn(
       venue: _venue,
@@ -93,29 +95,62 @@ void main() {
     controller.dispose();
   });
 
-  testWidgets('süresiz check-in aktif durum gösterir', (tester) async {
+  testWidgets('4 saat seçiminde geri sayım gösterilir', (tester) async {
     final controller = CheckInController();
     controller.tryCheckIn(
       venue: _venue,
       status: CheckInStatus.working,
       distanceMeters: 18,
-      duration: CheckInDuration.unlimited,
+      duration: CheckInDuration.fourHours,
     );
 
     await tester.pumpWidget(
       CheckInScope(
         controller: controller,
         child: MaterialApp(
-          home: Scaffold(
-            body: ActiveCheckInCard(session: controller.session!),
-          ),
+          home: Scaffold(body: ActiveCheckInCard(session: controller.session!)),
         ),
       ),
     );
 
-    expect(find.text('Aktif · süresiz'), findsOneWidget);
+    expect(find.textContaining('Kalan süre'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
+  });
+
+  testWidgets('düzenlemede mevcut süre seçilir ve değişiklik kaydedilir', (
+    tester,
+  ) async {
+    CheckInSelection? selected;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async {
+              selected = await showCheckInSheet(
+                context: context,
+                venueName: _venue.name,
+                initialStatus: CheckInStatus.working,
+                initialDuration: CheckInDuration.twoHours,
+                isEditing: true,
+              );
+            },
+            child: const Text('Düzenle'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Düzenle'));
+    await tester.pumpAndSettle();
+    final selectedChip = find.widgetWithText(ChoiceChip, '2 saat');
+    expect(tester.widget<ChoiceChip>(selectedChip).selected, isTrue);
+    await tester.tap(find.text('1 saat'));
+    final save = find.text('Değişiklikleri Kaydet');
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(selected?.status, CheckInStatus.working);
+    expect(selected?.duration, CheckInDuration.oneHour);
   });
 
   test('20 km dışındaki mock mekan keşif listesine girmez', () {

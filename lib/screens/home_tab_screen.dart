@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:momnt/models/check_in_status.dart';
+import 'package:momnt/services/demo_social_data.dart';
 import 'package:momnt/state/check_in_controller.dart';
 import 'package:momnt/widgets/active_check_in_card.dart';
 import 'package:momnt/widgets/check_in_status_badge.dart';
@@ -17,10 +18,8 @@ class HomeTabScreen extends StatelessWidget {
       venueArea: 'Moda Cad., Kadıköy',
       timeAgo: '8 dk önce',
       mood: CheckInStatus.drinkingCoffee,
-      avatarUrl:
-          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200',
-      venueImageUrl:
-          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=400',
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200',
+      venueImageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=400',
     ),
     _FeedCheckIn(
       name: 'Mert Yılmaz',
@@ -29,10 +28,8 @@ class HomeTabScreen extends StatelessWidget {
       venueArea: 'Bahariye, Kadıköy',
       timeAgo: '22 dk önce',
       mood: CheckInStatus.socializing,
-      avatarUrl:
-          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200',
-      venueImageUrl:
-          'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=400',
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200',
+      venueImageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=400',
     ),
     _FeedCheckIn(
       name: 'Selin Kaya',
@@ -41,10 +38,8 @@ class HomeTabScreen extends StatelessWidget {
       venueArea: 'Moda Cad., Kadıköy',
       timeAgo: '41 dk önce',
       mood: CheckInStatus.openToMeet,
-      avatarUrl:
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200',
-      venueImageUrl:
-          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=400',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200',
+      venueImageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=400',
     ),
     _FeedCheckIn(
       name: 'Mert Yılmaz',
@@ -53,10 +48,8 @@ class HomeTabScreen extends StatelessWidget {
       venueArea: 'Fenerbahçe, Kadıköy',
       timeAgo: '2 sa önce',
       mood: CheckInStatus.working,
-      avatarUrl:
-          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200',
-      venueImageUrl:
-          'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=400',
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200',
+      venueImageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=400',
     ),
   ];
 
@@ -86,6 +79,7 @@ class HomeTabScreen extends StatelessWidget {
             const SizedBox(height: 16),
             ActiveCheckInCard(
               session: session,
+              mutualFollows: demoMutualFollows,
               onCheckOut: () => CheckInScope.read(context).endCheckIn(),
             ),
           ],

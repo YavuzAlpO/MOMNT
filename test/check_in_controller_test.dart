@@ -15,6 +15,55 @@ const _venue = Venue(
 );
 
 void main() {
+  test('aynı mekanın check-in akışı da yeni süreyi mevcut oturuma uygular', () {
+    final controller = CheckInController();
+    addTearDown(controller.dispose);
+    final started = DateTime.now();
+    controller.tryCheckIn(
+      venue: _venue,
+      status: CheckInStatus.working,
+      distanceMeters: 10,
+      now: started,
+    );
+    final saved = started.add(const Duration(minutes: 10));
+    expect(
+      controller.tryCheckIn(
+        venue: _venue,
+        status: CheckInStatus.socializing,
+        distanceMeters: 10,
+        duration: CheckInDuration.twoHours,
+        now: saved,
+      ),
+      isTrue,
+    );
+    expect(controller.session!.expiresAt, saved.add(const Duration(hours: 2)));
+    expect(controller.session!.checkedInAt, started);
+    expect(controller.session!.duration, CheckInDuration.twoHours);
+    expect(controller.lifetimeCheckInCount, 1);
+  });
+
+  test('süresi dolmuş oturum süre düzenlenerek yeniden açılamaz', () {
+    final controller = CheckInController();
+    addTearDown(controller.dispose);
+    final started = DateTime.now();
+    controller.tryCheckIn(
+      venue: _venue,
+      status: CheckInStatus.working,
+      distanceMeters: 10,
+      now: started,
+    );
+    expect(
+      controller.updateStatus(
+        CheckInStatus.socializing,
+        duration: CheckInDuration.twoHours,
+        now: started.add(const Duration(hours: 1)),
+      ),
+      isFalse,
+    );
+    expect(controller.session, isNull);
+    expect(controller.lifetimeCheckInCount, 1);
+  });
+
   test('30 m içindeki check-in oturumu varsayılan 1 saat sürer', () {
     final controller = CheckInController();
     final started = DateTime(2026, 11, 3, 18);
@@ -27,7 +76,10 @@ void main() {
 
     expect(ok, isTrue);
     expect(controller.session!.duration, CheckInDuration.oneHour);
-    expect(controller.session!.expiresAt, started.add(const Duration(hours: 1)));
+    expect(
+      controller.session!.expiresAt,
+      started.add(const Duration(hours: 1)),
+    );
     expect(controller.lifetimeCheckInCount, 1);
     controller.dispose();
   });
@@ -123,9 +175,7 @@ void main() {
   });
 
   test('5 dk kala mekânda değilse süre uzamaz', () async {
-    final controller = CheckInController(
-      presenceCheck: (_) async => false,
-    );
+    final controller = CheckInController(presenceCheck: (_) async => false);
     final started = DateTime(2026, 11, 3, 18);
     controller.tryCheckIn(
       venue: _venue,
@@ -153,7 +203,7 @@ void main() {
       venue: _venue,
       status: CheckInStatus.socializing,
       distanceMeters: 10,
-      duration: CheckInDuration.unlimited,
+      duration: CheckInDuration.fourHours,
     );
 
     controller.endCheckIn();
@@ -162,24 +212,77 @@ void main() {
     controller.dispose();
   });
 
-  test('süresiz oturum zaman aşımına düşmez', () async {
+  test('4 saat seçilince azami sürede oturum kapanır', () async {
     final controller = CheckInController();
     final started = DateTime(2026, 11, 3, 18);
     controller.tryCheckIn(
       venue: _venue,
       status: CheckInStatus.working,
       distanceMeters: 12,
-      duration: CheckInDuration.unlimited,
+      duration: CheckInDuration.fourHours,
       now: started,
     );
 
     await controller.evaluateSession(
       distanceMeters: 12,
-      now: started.add(const Duration(days: 2)),
+      now: started.add(MomntLocationRules.sessionTimeout),
     );
 
-    expect(controller.isCheckedIn, isTrue);
-    expect(controller.session!.isUnlimited, isTrue);
+    expect(controller.isCheckedIn, isFalse);
     controller.dispose();
+  });
+
+  test('statü düzenlenirken süre de değişir ve sayaç o andan başlar', () {
+    final controller = CheckInController();
+    addTearDown(controller.dispose);
+    final started = DateTime.now();
+    controller.tryCheckIn(
+      venue: _venue,
+      status: CheckInStatus.working,
+      distanceMeters: 12,
+      now: started,
+    );
+    final edited = started.add(const Duration(minutes: 20));
+    controller.updateStatus(
+      CheckInStatus.socializing,
+      duration: CheckInDuration.twoHours,
+      now: edited,
+    );
+
+    expect(controller.session!.status, CheckInStatus.socializing);
+    expect(controller.session!.duration, CheckInDuration.twoHours);
+    expect(controller.session!.expiresAt, edited.add(const Duration(hours: 2)));
+    expect(controller.session!.checkedInAt, started);
+    expect(controller.lifetimeCheckInCount, 1);
+
+    final expiry = controller.session!.expiresAt;
+    controller.updateStatus(
+      CheckInStatus.working,
+      duration: CheckInDuration.twoHours,
+      now: edited.add(const Duration(minutes: 10)),
+    );
+    expect(controller.session!.expiresAt, expiry);
+  });
+
+  test('süre düzenleme toplam 4 saat sınırını sıfırlamaz', () {
+    final controller = CheckInController();
+    addTearDown(controller.dispose);
+    final started = DateTime.now();
+    controller.tryCheckIn(
+      venue: _venue,
+      status: CheckInStatus.working,
+      distanceMeters: 12,
+      duration: CheckInDuration.twoHours,
+      now: started,
+    );
+    controller.updateStatus(
+      CheckInStatus.working,
+      duration: CheckInDuration.fourHours,
+      now: started.add(const Duration(hours: 1)),
+    );
+    expect(
+      controller.session!.expiresAt,
+      started.add(MomntLocationRules.sessionTimeout),
+    );
   });
 }

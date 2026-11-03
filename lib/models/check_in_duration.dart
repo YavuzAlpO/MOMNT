@@ -1,31 +1,27 @@
+import 'package:momnt/services/location_service.dart';
+
 /// K-036: kullanıcının seçtiği check-in süresi. Varsayılan 1 saat.
 enum CheckInDuration {
+  halfHour,
   oneHour,
-  threeHours,
-  oneDay,
-  unlimited;
+  twoHours,
+  fourHours;
 
   static const CheckInDuration defaultValue = oneHour;
 
   String get label => switch (this) {
-        oneHour => '1 saat',
-        threeHours => '3 saat',
-        oneDay => '1 gün',
-        unlimited => 'Süresiz',
-      };
+    halfHour => '30 dk',
+    oneHour => '1 saat',
+    twoHours => '2 saat',
+    fourHours => '4 saat',
+  };
 
-  Duration? get length => switch (this) {
-        oneHour => const Duration(hours: 1),
-        threeHours => const Duration(hours: 3),
-        oneDay => const Duration(days: 1),
-        unlimited => null,
-      };
+  Duration get length => switch (this) {
+    halfHour => const Duration(minutes: 30),
+    oneHour => const Duration(hours: 1),
+    twoHours => const Duration(hours: 2),
+    fourHours => MomntLocationRules.sessionTimeout,
+  };
 
-  bool get isUnlimited => this == CheckInDuration.unlimited;
-
-  DateTime? expiresAtFrom(DateTime start) {
-    final length = this.length;
-    if (length == null) return null;
-    return start.add(length);
-  }
+  DateTime expiresAtFrom(DateTime start) => start.add(length);
 }

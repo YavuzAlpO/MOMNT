@@ -3,6 +3,7 @@ import 'package:momnt/models/check_in_duration.dart';
 import 'package:momnt/models/check_in_status.dart';
 import 'package:momnt/models/venue_model.dart';
 import 'package:momnt/state/check_in_controller.dart';
+import 'package:momnt/services/location_service.dart';
 
 class CheckInSelection {
   const CheckInSelection({
@@ -20,12 +21,13 @@ Future<void> presentCheckInForVenue({
   required double distanceMeters,
 }) async {
   final checkIn = CheckInScope.read(context);
+  if (checkIn.isCheckedInAt(venue.id)) {
+    await presentCheckInEdit(context: context);
+    return;
+  }
   final selected = await showCheckInSheet(
     context: context,
     venueName: venue.name,
-    initialStatus:
-        checkIn.isCheckedInAt(venue.id) ? checkIn.session?.status : null,
-    initialDuration: checkIn.session?.duration,
   );
   if (selected == null || !context.mounted) return;
 
@@ -47,12 +49,38 @@ Future<void> presentCheckInForVenue({
   );
 }
 
+/// Düzenleme yalnızca açıldığı oturuma uygulanır; iptal state'i değiştirmez.
+Future<void> presentCheckInEdit({required BuildContext context}) async {
+  final controller = CheckInScope.read(context);
+  final session = controller.session;
+  if (session == null) return;
+  final selected = await showCheckInSheet(
+    context: context,
+    venueName: session.venueName,
+    initialStatus: session.status,
+    initialDuration: session.duration,
+    isEditing: true,
+  );
+  if (selected == null || !context.mounted) return;
+  final updated = controller.updateStatus(
+    selected.status,
+    duration: selected.duration,
+    expectedSession: session,
+  );
+  if (!updated) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Bu check-in artık aktif değil.')),
+    );
+  }
+}
+
 Future<CheckInSelection?> showCheckInSheet({
   required BuildContext context,
   required String venueName,
   CheckInStatus? initialStatus,
   CheckInDuration? initialDuration,
   bool showDurationPicker = true,
+  bool isEditing = false,
 }) {
   return showModalBottomSheet<CheckInSelection>(
     context: context,
@@ -65,6 +93,7 @@ Future<CheckInSelection?> showCheckInSheet({
       initialStatus: initialStatus,
       initialDuration: initialDuration,
       showDurationPicker: showDurationPicker,
+      isEditing: isEditing,
     ),
   );
 }
@@ -76,12 +105,14 @@ class CheckInSheet extends StatefulWidget {
     this.initialStatus,
     this.initialDuration,
     this.showDurationPicker = true,
+    this.isEditing = false,
   });
 
   final String venueName;
   final CheckInStatus? initialStatus;
   final CheckInDuration? initialDuration;
   final bool showDurationPicker;
+  final bool isEditing;
 
   @override
   State<CheckInSheet> createState() => _CheckInSheetState();
@@ -107,153 +138,171 @@ class _CheckInSheetState extends State<CheckInSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            widget.venueName,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0F2167),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Check-in yapmak üzeresin',
-            style: TextStyle(color: Colors.grey, fontSize: 13),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Anlık Durumun',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 10),
-          ...CheckInStatus.values.map((status) {
-            final isSelected = _selectedStatus == status;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: InkWell(
-                onTap: () => setState(() => _selectedStatus = status),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color(0xFF0F2167).withValues(alpha: 0.08)
-                        : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected
-                          ? const Color(0xFF0F2167)
-                          : Colors.transparent,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        status.icon,
-                        color: isSelected
-                            ? const Color(0xFF0F2167)
-                            : Colors.black54,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          status.label,
-                          style: TextStyle(
-                            fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected
-                                ? const Color(0xFF0F2167)
-                                : Colors.black87,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        isSelected
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                        color: isSelected
-                            ? const Color(0xFF0F2167)
-                            : Colors.grey,
-                        size: 20,
-                      ),
-                    ],
-                  ),
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            );
-          }),
-          if (widget.showDurationPicker) ...[
-            const SizedBox(height: 8),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              widget.venueName,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F2167),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              widget.isEditing
+                  ? 'Statünü ve süreni güncelle'
+                  : 'Check-in yapmak üzeresin',
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
             const Text(
-              'Ne kadar kalacaksın?',
+              'Anlık Durumun',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final duration in CheckInDuration.values)
-                  ChoiceChip(
-                    label: Text(duration.label),
-                    selected: _selectedDuration == duration,
-                    selectedColor: const Color(0xFF0F2167).withValues(alpha: 0.12),
-                    labelStyle: TextStyle(
-                      color: const Color(0xFF0F2167),
-                      fontWeight: _selectedDuration == duration
-                          ? FontWeight.w800
-                          : FontWeight.w500,
+            ...CheckInStatus.values.map((status) {
+              final isSelected = _selectedStatus == status;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: InkWell(
+                  onTap: () => setState(() => _selectedStatus = status),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
                     ),
-                    onSelected: (_) =>
-                        setState(() => _selectedDuration = duration),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFF0F2167).withValues(alpha: 0.08)
+                          : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF0F2167)
+                            : Colors.transparent,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          status.icon,
+                          color: isSelected
+                              ? const Color(0xFF0F2167)
+                              : Colors.black54,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            status.label,
+                            style: TextStyle(
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isSelected
+                                  ? const Color(0xFF0F2167)
+                                  : Colors.black87,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          isSelected
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                          color: isSelected
+                              ? const Color(0xFF0F2167)
+                              : Colors.grey,
+                          size: 20,
+                        ),
+                      ],
+                    ),
                   ),
-              ],
+                ),
+              );
+            }),
+            if (widget.showDurationPicker) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Ne kadar kalacaksın?',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final duration in CheckInDuration.values)
+                    ChoiceChip(
+                      label: Text(duration.label),
+                      selected: _selectedDuration == duration,
+                      selectedColor: const Color(0xFF0F2167)
+                          .withValues(alpha: 0.12),
+                      labelStyle: TextStyle(
+                        color: const Color(0xFF0F2167),
+                        fontWeight: _selectedDuration == duration
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                      ),
+                      onSelected: (_) =>
+                          setState(() => _selectedDuration = duration),
+                    ),
+                ],
+              ),
+            ],
+            if (widget.showDurationPicker) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Check-in toplam en fazla ${MomntLocationRules.sessionTimeout.inHours} saat sürer.'
+                '${widget.isEditing ? ' Farklı bir süre seçersen yeni süre şimdi başlar.' : ''}',
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(
+                context,
+                CheckInSelection(
+                  status: _selectedStatus,
+                  duration: _selectedDuration,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0F2167),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                widget.isEditing
+                    ? 'Değişiklikleri Kaydet'
+                    : 'Check-in\'i Başlat',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
             ),
           ],
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(
-              context,
-              CheckInSelection(
-                status: _selectedStatus,
-                duration: _selectedDuration,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0F2167),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              'Check-in\'i Başlat',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
-          ),
-        ],
         ),
       ),
     );
