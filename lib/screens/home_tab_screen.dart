@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:momnt/models/check_in_status.dart';
 import 'package:momnt/services/demo_social_data.dart';
 import 'package:momnt/state/check_in_controller.dart';
-import 'package:momnt/widgets/active_check_in_card.dart';
+import 'package:momnt/widgets/home_activity_strip.dart';
+import 'package:momnt/widgets/check_in_manager_sheet.dart';
 import 'package:momnt/widgets/check_in_status_badge.dart';
 
 const _navy = Color(0xFF0F2167);
@@ -75,14 +76,12 @@ class HomeTabScreen extends StatelessWidget {
             'Arkadaşlarının anlık check-in’leri',
             style: TextStyle(color: Colors.grey[600], fontSize: 14),
           ),
-          if (session != null) ...[
-            const SizedBox(height: 16),
-            ActiveCheckInCard(
-              session: session,
-              mutualFollows: demoMutualFollows,
-              onCheckOut: () => CheckInScope.read(context).endCheckIn(),
-            ),
-          ],
+          const SizedBox(height: 16),
+          HomeActivityStrip(
+            session: session,
+            mutualFollows: demoMutualFollows,
+            onManageCheckIn: () => showCheckInManager(context),
+          ),
           const SizedBox(height: 16),
           Expanded(
             child: ListView.separated(

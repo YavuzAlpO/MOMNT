@@ -14,12 +14,16 @@ class ActiveCheckInCard extends StatefulWidget {
     this.mutualFollows = const [],
     this.onChangeStatus,
     this.onCheckOut,
+    this.compact = false,
+    this.onOpen,
   });
 
   final CheckInSession session;
   final List<MutualFollowProfile> mutualFollows;
   final VoidCallback? onChangeStatus;
   final VoidCallback? onCheckOut;
+  final bool compact;
+  final VoidCallback? onOpen;
 
   @override
   State<ActiveCheckInCard> createState() => _ActiveCheckInCardState();
@@ -60,6 +64,90 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
   Widget build(BuildContext context) {
     final session = widget.session;
     final remaining = session.remaining();
+
+    if (widget.compact) {
+      return Material(
+        color: _navy.withValues(alpha: 0.06),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: _navy.withValues(alpha: 0.16)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: widget.onOpen,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.location_on, size: 14, color: _navy),
+                    SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Aktif check-in',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 11, color: _navy),
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, size: 16, color: _navy),
+                  ],
+                ),
+                Text(
+                  session.venueName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _navy,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  session.status.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11, color: _navy),
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.schedule, size: 13, color: _navy),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        formatCountdown(remaining),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: _navy,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (widget.mutualFollows.isNotEmpty) ...[
+                      const SizedBox(width: 4),
+                      SizedBox(
+                        width: 40,
+                        height: 26,
+                        child: FittedBox(
+                          child: MutualFollowAvatars(
+                            profiles: widget.mutualFollows,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Container(
       width: double.infinity,
