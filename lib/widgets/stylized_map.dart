@@ -42,12 +42,12 @@ class StylizedMap extends StatelessWidget {
                 width: 20,
                 height: 20,
                 decoration: BoxDecoration(
-                  color: MomntColors.navyDeep,
+                  color: MomntColors.accent,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 3),
                   boxShadow: [
                     BoxShadow(
-                      color: MomntColors.navyDeep.withValues(alpha: 0.35),
+                      color: MomntColors.accent.withValues(alpha: 0.35),
                       blurRadius: 12,
                     ),
                   ],
@@ -95,7 +95,7 @@ class _MapPin extends StatelessWidget {
               width: size,
               height: size,
               decoration: BoxDecoration(
-                color: selected ? MomntColors.navyDeep : MomntColors.navy,
+                color: selected ? MomntColors.accent : MomntColors.ink,
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 3),
                 boxShadow: const [
@@ -110,7 +110,7 @@ class _MapPin extends StatelessWidget {
                 child: Text(
                   label,
                   style: const TextStyle(
-                    color: MomntColors.navy,
+                    color: MomntColors.ink,
                     fontWeight: FontWeight.w800,
                     fontSize: 12,
                   ),
@@ -156,10 +156,7 @@ class _MapProjector {
   Offset project(double lat, double lng) {
     final x = (lng - minLng) / (maxLng - minLng);
     final y = 1 - (lat - minLat) / (maxLat - minLat);
-    return Offset(
-      24 + x * (size.width - 48),
-      24 + y * (size.height - 48),
-    );
+    return Offset(24 + x * (size.width - 48), 24 + y * (size.height - 48));
   }
 }
 

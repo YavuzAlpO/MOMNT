@@ -40,14 +40,14 @@ class ProfileScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 40,
-              backgroundColor: MomntColors.navy,
+              backgroundColor: MomntColors.ink,
               child: Icon(Icons.person, color: Colors.white, size: 40),
             ),
             SizedBox(height: 16),
             Text(
               'MOMNT kullanıcısı',
               style: TextStyle(
-                color: MomntColors.navy,
+                color: MomntColors.ink,
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
               ),
@@ -84,7 +84,7 @@ class _EmptyTab extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: MomntColors.navy),
+            Icon(icon, size: 48, color: MomntColors.ink),
             const SizedBox(height: 12),
             Text(message, style: const TextStyle(color: MomntColors.muted)),
           ],

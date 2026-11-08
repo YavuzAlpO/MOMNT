@@ -1,5 +1,12 @@
 import 'package:momnt/models/chat_attachment.dart';
 
+class StoryReply {
+  const StoryReply({required this.imageUrl, required this.caption});
+
+  final String imageUrl;
+  final String caption;
+}
+
 class ChatMessage {
   const ChatMessage({
     required this.id,
@@ -8,6 +15,7 @@ class ChatMessage {
     required this.isMine,
     this.readAt,
     this.attachment,
+    this.storyReply,
   });
 
   final String id;
@@ -18,8 +26,12 @@ class ChatMessage {
   /// Gelen mesajda bizim; giden mesajda karşı tarafın okuma zamanı.
   final DateTime? readAt;
   final ChatAttachment? attachment;
-  String get previewText =>
-      text.isNotEmpty ? text : attachment?.previewText ?? '';
+  final StoryReply? storyReply;
+
+  String get previewText {
+    if (storyReply != null) return 'Hikâye yanıtı: $text';
+    return text.isNotEmpty ? text : attachment?.previewText ?? '';
+  }
 
   ChatMessage markRead(DateTime time) => ChatMessage(
     id: id,
@@ -28,6 +40,7 @@ class ChatMessage {
     isMine: isMine,
     readAt: readAt ?? time,
     attachment: attachment,
+    storyReply: storyReply,
   );
 
   ChatMessage withAttachment(ChatAttachment next) => ChatMessage(
@@ -37,5 +50,6 @@ class ChatMessage {
     isMine: isMine,
     readAt: readAt,
     attachment: next,
+    storyReply: storyReply,
   );
 }

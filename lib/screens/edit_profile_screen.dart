@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/models/profile_info.dart';
-
-const _navy = Color(0xFF0F2167);
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({
@@ -50,7 +49,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       context,
       ProfileInfo(
         name: _nameController.text.trim(),
-        username: _usernameController.text.trim().replaceFirst(RegExp(r'^@'), ''),
+        username: _usernameController.text.trim().replaceFirst(
+          RegExp(r'^@'),
+          '',
+        ),
         bio: _bioController.text.trim(),
       ),
     );
@@ -59,10 +61,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: MomntColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8FAFC),
-        foregroundColor: _navy,
+        backgroundColor: MomntColors.background,
+        foregroundColor: MomntColors.accent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -71,7 +73,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         title: const Text(
           'Profili Düzenle',
           style: TextStyle(
-            color: _navy,
+            color: MomntColors.accent,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -97,7 +99,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               padding: const EdgeInsets.all(3),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: _navy, width: 2),
+                                border: Border.all(
+                                  color: MomntColors.accent,
+                                  width: 2,
+                                ),
                               ),
                               child: const CircleAvatar(
                                 radius: 56,
@@ -108,7 +113,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               width: 36,
                               height: 36,
                               decoration: BoxDecoration(
-                                color: _navy,
+                                color: MomntColors.accent,
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: Colors.white,
@@ -156,7 +161,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: ElevatedButton(
                   onPressed: _save,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _navy,
+                    backgroundColor: MomntColors.accent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -204,7 +209,7 @@ class _ProfileField extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: _navy,
+            color: MomntColors.accent,
             fontWeight: FontWeight.w700,
             fontSize: 14,
           ),
@@ -214,29 +219,32 @@ class _ProfileField extends StatelessWidget {
           controller: controller,
           maxLines: maxLines,
           textCapitalization: textCapitalization,
-          style: const TextStyle(fontSize: 15, color: Colors.black87),
+          style: const TextStyle(fontSize: 15, color: MomntColors.ink),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey[400]),
+            hintStyle: TextStyle(color: MomntColors.muted),
             prefixText: prefixText,
             prefixStyle: const TextStyle(
-              color: _navy,
+              color: MomntColors.accent,
               fontWeight: FontWeight.w700,
               fontSize: 15,
             ),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: MomntColors.surface,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: BorderSide(color: MomntColors.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: _navy, width: 1.5),
+              borderSide: const BorderSide(
+                color: MomntColors.accent,
+                width: 1.5,
+              ),
             ),
           ),
         ),

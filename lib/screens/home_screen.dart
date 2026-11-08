@@ -30,7 +30,7 @@ class HomeScreen extends StatelessWidget {
               const Text(
                 'Yakındaki anlar',
                 style: TextStyle(
-                  color: MomntColors.navy,
+                  color: MomntColors.ink,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
@@ -84,7 +84,8 @@ class HomeScreen extends StatelessWidget {
                     await presentCheckInForVenue(
                       context: context,
                       venue: nearby.venue,
-                      distanceMeters: controller.selected?.distanceMeters ??
+                      distanceMeters:
+                          controller.selected?.distanceMeters ??
                           nearby.distanceMeters,
                     );
                   },

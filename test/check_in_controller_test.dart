@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:momnt/models/check_in_duration.dart';
 import 'package:momnt/models/check_in_status.dart';
 import 'package:momnt/models/venue_model.dart';
@@ -14,7 +15,101 @@ const _venue = Venue(
   activeUsersCount: 24,
 );
 
+class _SessionLocation extends LocationService {
+  Position activePosition = _position(_venue.latitude);
+  int checks = 0;
+
+  static Position _position(double latitude, {DateTime? timestamp}) => Position(
+    latitude: latitude,
+    longitude: _venue.longitude,
+    timestamp: timestamp ?? DateTime.now(),
+    accuracy: 5,
+    altitude: 0,
+    altitudeAccuracy: 0,
+    heading: 0,
+    headingAccuracy: 0,
+    speed: 0,
+    speedAccuracy: 0,
+  );
+
+  @override
+  Future<Position> getCurrentPosition() async => _position(_venue.latitude);
+
+  @override
+  Future<Position> getActiveCheckInPosition() async {
+    checks++;
+    return activePosition;
+  }
+}
+
 void main() {
+  testWidgets('canlı oturum uzaklaşınca konum kontrolünden otomatik kapanır', (
+    tester,
+  ) async {
+    final location = _SessionLocation();
+    final controller = CheckInController(locationService: location);
+    try {
+      expect(
+        await controller.checkInWithLiveLocation(
+          venue: _venue,
+          status: CheckInStatus.working,
+        ),
+        isTrue,
+      );
+      await tester.pump(CheckInLifecycleRules.locationCheckInterval);
+      expect(location.checks, 1);
+      expect(controller.isCheckedIn, isTrue);
+
+      controller.setForeground(false);
+      location.activePosition = _SessionLocation._position(
+        _venue.latitude + .02,
+      );
+      await tester.pump(CheckInLifecycleRules.locationCheckInterval);
+      expect(location.checks, 1);
+      controller.setForeground(true);
+      await tester.pump();
+      expect(controller.isCheckedIn, isFalse);
+      expect(controller.lastError, contains('1 km'));
+      await tester.pump(CheckInLifecycleRules.locationCheckInterval);
+      expect(location.checks, 2);
+    } finally {
+      controller.dispose();
+    }
+  });
+
+  test(
+    'otomatik uzatma eski konumu reddeder ve yeni ölçümü kullanır',
+    () async {
+      final location = _SessionLocation()
+        ..activePosition = _SessionLocation._position(
+          _venue.latitude,
+          timestamp: DateTime.now().subtract(const Duration(minutes: 1)),
+        );
+      final controller = CheckInController(locationService: location);
+      addTearDown(controller.dispose);
+      final started = DateTime.now().subtract(const Duration(minutes: 56));
+      controller.tryCheckIn(
+        venue: _venue,
+        status: CheckInStatus.working,
+        distanceMeters: 10,
+        now: started,
+      );
+
+      expect(await controller.checkAutoExtend(), isFalse);
+      expect(
+        controller.session!.expiresAt,
+        started.add(const Duration(hours: 1)),
+      );
+      location.activePosition = _SessionLocation._position(_venue.latitude);
+      expect(await controller.checkAutoExtend(), isTrue);
+      expect(
+        controller.session!.expiresAt,
+        started.add(const Duration(hours: 2)),
+      );
+      expect(location.checks, 2);
+    },
+  );
+
   test('aynı mekanın check-in akışı da yeni süreyi mevcut oturuma uygular', () {
     final controller = CheckInController();
     addTearDown(controller.dispose);
@@ -112,7 +207,7 @@ void main() {
     controller.dispose();
   });
 
-  test('1 km uzaklaşma otomatik check-out yapar', () async {
+  test('tam 1 km açık kalır ve eşik aşılınca check-out yapılır', () async {
     final controller = CheckInController();
     controller.tryCheckIn(
       venue: _venue,
@@ -120,6 +215,10 @@ void main() {
       distanceMeters: 12,
     );
 
+    await controller.evaluateSession(
+      distanceMeters: MomntLocationRules.autoExitDistanceMeters,
+    );
+    expect(controller.isCheckedIn, isTrue);
     await controller.evaluateSession(
       distanceMeters: MomntLocationRules.autoExitDistanceMeters + 1,
     );
@@ -212,24 +311,24 @@ void main() {
     controller.dispose();
   });
 
-  test('4 saat seçilince azami sürede oturum kapanır', () async {
+  testWidgets('dört saatlik oturum zamanlayıcıyla kendiliğinden kapanır', (
+    tester,
+  ) async {
     final controller = CheckInController();
-    final started = DateTime(2026, 11, 3, 18);
+    addTearDown(controller.dispose);
     controller.tryCheckIn(
       venue: _venue,
       status: CheckInStatus.working,
       distanceMeters: 12,
       duration: CheckInDuration.fourHours,
-      now: started,
     );
 
-    await controller.evaluateSession(
-      distanceMeters: 12,
-      now: started.add(MomntLocationRules.sessionTimeout),
-    );
-
+    const step = Duration(milliseconds: 1);
+    await tester.pump(MomntLocationRules.sessionTimeout - step);
+    expect(controller.isCheckedIn, isTrue);
+    await tester.pump(step);
     expect(controller.isCheckedIn, isFalse);
-    controller.dispose();
+    expect(controller.lastError, 'Check-in süresi doldu.');
   });
 
   test('statü düzenlenirken süre de değişir ve sayaç o andan başlar', () {

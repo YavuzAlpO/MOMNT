@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/models/check_in_session.dart';
 import 'package:momnt/models/mutual_follow_profile.dart';
 import 'package:momnt/utils/formatters.dart';
 import 'package:momnt/widgets/check_in_status_badge.dart';
 import 'package:momnt/widgets/mutual_follow_avatars.dart';
 
-class ActiveCheckInCard extends StatefulWidget {
+class ActiveCheckInCard extends StatelessWidget {
   const ActiveCheckInCard({
     super.key,
     required this.session,
@@ -26,55 +27,17 @@ class ActiveCheckInCard extends StatefulWidget {
   final VoidCallback? onOpen;
 
   @override
-  State<ActiveCheckInCard> createState() => _ActiveCheckInCardState();
-}
-
-class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
-  static const _navy = Color(0xFF0F2167);
-  Timer? _tick;
-
-  @override
-  void initState() {
-    super.initState();
-    _syncTicker();
-  }
-
-  @override
-  void didUpdateWidget(covariant ActiveCheckInCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.session.expiresAt != widget.session.expiresAt) {
-      _syncTicker();
-    }
-  }
-
-  void _syncTicker() {
-    _tick?.cancel();
-    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _tick?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final session = widget.session;
-    final remaining = session.remaining();
-
-    if (widget.compact) {
+    if (compact) {
       return Material(
-        color: _navy.withValues(alpha: 0.06),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: _navy.withValues(alpha: 0.16)),
+        color: MomntColors.soft,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(18)),
+          side: BorderSide(color: MomntColors.outline),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: widget.onOpen,
+          onTap: onOpen,
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
@@ -83,17 +46,28 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.location_on, size: 14, color: _navy),
+                    Icon(
+                      Icons.location_on,
+                      size: 14,
+                      color: MomntColors.accent,
+                    ),
                     SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         'Aktif check-in',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11, color: _navy),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: MomntColors.accent,
+                        ),
                       ),
                     ),
-                    Icon(Icons.chevron_right, size: 16, color: _navy),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: MomntColors.accent,
+                    ),
                   ],
                 ),
                 Text(
@@ -101,7 +75,7 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: _navy,
+                    color: MomntColors.ink,
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
@@ -110,33 +84,36 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
                   session.status.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11, color: _navy),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: MomntColors.muted,
+                  ),
                 ),
                 Row(
                   children: [
-                    const Icon(Icons.schedule, size: 13, color: _navy),
+                    const Icon(
+                      Icons.schedule,
+                      size: 13,
+                      color: MomntColors.accent,
+                    ),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: Text(
-                        formatCountdown(remaining),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: _CountdownText(
+                        session: session,
                         style: const TextStyle(
                           fontSize: 12,
-                          color: _navy,
+                          color: MomntColors.accent,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
-                    if (widget.mutualFollows.isNotEmpty) ...[
+                    if (mutualFollows.isNotEmpty) ...[
                       const SizedBox(width: 4),
                       SizedBox(
                         width: 40,
                         height: 26,
                         child: FittedBox(
-                          child: MutualFollowAvatars(
-                            profiles: widget.mutualFollows,
-                          ),
+                          child: MutualFollowAvatars(profiles: mutualFollows),
                         ),
                       ),
                     ],
@@ -153,9 +130,9 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _navy.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _navy.withValues(alpha: 0.16)),
+        color: MomntColors.soft,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: MomntColors.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,17 +143,17 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
                 child: Text(
                   'Şu an buradasın',
                   style: TextStyle(
-                    color: Colors.grey,
+                    color: MomntColors.muted,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              if (widget.mutualFollows.isNotEmpty) ...[
+              if (mutualFollows.isNotEmpty) ...[
                 const SizedBox(width: 10),
                 Flexible(
                   flex: 2,
-                  child: MutualFollowAvatars(profiles: widget.mutualFollows),
+                  child: MutualFollowAvatars(profiles: mutualFollows),
                 ),
               ],
             ],
@@ -185,7 +162,7 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
           Text(
             session.venueName,
             style: const TextStyle(
-              color: _navy,
+              color: MomntColors.ink,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
@@ -193,22 +170,22 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
           const SizedBox(height: 8),
           CheckInStatusBadge(status: session.status),
           const SizedBox(height: 10),
-          _LifecycleBanner(session: session, remaining: remaining),
-          if (widget.onChangeStatus != null || widget.onCheckOut != null) ...[
+          _LifecycleBanner(session: session),
+          if (onChangeStatus != null || onCheckOut != null) ...[
             const SizedBox(height: 8),
             Row(
               children: [
-                if (widget.onChangeStatus != null)
+                if (onChangeStatus != null)
                   TextButton(
-                    onPressed: widget.onChangeStatus,
+                    onPressed: onChangeStatus,
                     child: const Text('Statüyü değiştir'),
                   ),
-                if (widget.onCheckOut != null)
+                if (onCheckOut != null)
                   Expanded(
                     child: Align(
                       alignment: Alignment.centerRight,
                       child: FilledButton(
-                        onPressed: widget.onCheckOut,
+                        onPressed: onCheckOut,
                         child: const Text("Check-in'i Bitir"),
                       ),
                     ),
@@ -223,22 +200,20 @@ class _ActiveCheckInCardState extends State<ActiveCheckInCard> {
 }
 
 class _LifecycleBanner extends StatelessWidget {
-  const _LifecycleBanner({required this.session, required this.remaining});
+  const _LifecycleBanner({required this.session});
 
   final CheckInSession session;
-  final Duration remaining;
-
-  static const _navy = Color(0xFF0F2167);
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Kalan süre ${formatCountdown(remaining)}',
+        _CountdownText(
+          session: session,
+          prefix: 'Kalan süre ',
           style: const TextStyle(
-            color: _navy,
+            color: MomntColors.accent,
             fontWeight: FontWeight.w800,
             fontSize: 15,
           ),
@@ -248,9 +223,76 @@ class _LifecycleBanner extends StatelessWidget {
           session.autoExtendCount > 0
               ? '${session.duration.label} · ${session.autoExtendCount} kez uzatıldı'
               : session.duration.label,
-          style: const TextStyle(color: Colors.grey, fontSize: 12),
+          style: const TextStyle(color: MomntColors.muted, fontSize: 12),
         ),
       ],
+    );
+  }
+}
+
+class _CountdownText extends StatefulWidget {
+  const _CountdownText({
+    required this.session,
+    required this.style,
+    this.prefix = '',
+  });
+
+  final CheckInSession session;
+  final TextStyle style;
+  final String prefix;
+
+  @override
+  State<_CountdownText> createState() => _CountdownTextState();
+}
+
+class _CountdownTextState extends State<_CountdownText> {
+  Timer? _timer;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _CountdownText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.session.expiresAt != widget.session.expiresAt) _syncTimer();
+  }
+
+  void _syncTimer() {
+    final tabVisible = TickerMode.valuesOf(context).enabled;
+    final routeVisible = ModalRoute.isCurrentOf(context) ?? true;
+    if (!tabVisible ||
+        !routeVisible ||
+        widget.session.expiresAt == null ||
+        widget.session.isExpired()) {
+      _timer?.cancel();
+      _timer = null;
+      return;
+    }
+    _timer ??= Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {});
+      if (widget.session.isExpired()) {
+        timer.cancel();
+        _timer = null;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '${widget.prefix}${formatCountdown(widget.session.remaining())}',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: widget.style,
     );
   }
 }

@@ -22,7 +22,7 @@ class VenueSummaryCard extends StatelessWidget {
     return Material(
       color: Colors.white,
       elevation: 10,
-      shadowColor: MomntColors.navy.withValues(alpha: 0.18),
+      shadowColor: MomntColors.ink.withValues(alpha: 0.18),
       borderRadius: BorderRadius.circular(24),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -33,12 +33,12 @@ class VenueSummaryCard extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: const Color(0xFFE2E8F0),
+                color: MomntColors.soft,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(
                 Icons.local_cafe_rounded,
-                color: MomntColors.navy,
+                color: MomntColors.ink,
                 size: 32,
               ),
             ),
@@ -50,7 +50,7 @@ class VenueSummaryCard extends StatelessWidget {
                   Text(
                     venue.name,
                     style: const TextStyle(
-                      color: MomntColors.navy,
+                      color: MomntColors.ink,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
@@ -87,7 +87,7 @@ class VenueSummaryCard extends StatelessWidget {
                       Text(
                         '${venue.activeUsersCount} kişi',
                         style: const TextStyle(
-                          color: MomntColors.navy,
+                          color: MomntColors.ink,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

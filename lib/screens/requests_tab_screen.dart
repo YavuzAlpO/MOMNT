@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 
 class RequestsTabScreen extends StatelessWidget {
   const RequestsTabScreen({super.key});
@@ -10,14 +11,7 @@ class RequestsTabScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'İstekler',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0F2167),
-            ),
-          ),
+          Text('İstekler', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 16),
           Expanded(
             child: ListView(
@@ -28,8 +22,7 @@ class RequestsTabScreen extends StatelessWidget {
                   venue: 'Moda Kahve',
                   time: '5 dk önce',
                   status: 'Kahve içiyorum',
-                  avatarUrl:
-                      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150',
+                  avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150',
                 ),
                 _buildRequestCard(
                   name: 'Selin Kaya',
@@ -37,8 +30,7 @@ class RequestsTabScreen extends StatelessWidget {
                   venue: 'Espresso Lab',
                   time: '18 dk önce',
                   status: 'Sosyalleşiyorum',
-                  avatarUrl:
-                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150',
+                  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150',
                 ),
               ],
             ),
@@ -80,13 +72,13 @@ class RequestsTabScreen extends StatelessWidget {
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: Color(0xFF0F2167),
+                          color: MomntColors.accent,
                         ),
                       ),
                       Text(
                         '$username · $time',
                         style: const TextStyle(
-                          color: Colors.grey,
+                          color: MomntColors.muted,
                           fontSize: 12,
                         ),
                       ),
@@ -99,7 +91,7 @@ class RequestsTabScreen extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F2167).withOpacity(0.08),
+                    color: MomntColors.accent.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -107,7 +99,7 @@ class RequestsTabScreen extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F2167),
+                      color: MomntColors.accent,
                     ),
                   ),
                 ),
@@ -119,12 +111,12 @@ class RequestsTabScreen extends StatelessWidget {
                 const Icon(
                   Icons.location_on_outlined,
                   size: 16,
-                  color: Colors.grey,
+                  color: MomntColors.muted,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '$venue\'de seninle tanışmak istiyor.',
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  style: const TextStyle(fontSize: 13, color: MomntColors.ink),
                 ),
               ],
             ),
@@ -138,11 +130,11 @@ class RequestsTabScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      side: const BorderSide(color: Colors.grey),
+                      side: const BorderSide(color: MomntColors.muted),
                     ),
                     child: const Text(
                       'Kabul Etme',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: MomntColors.muted),
                     ),
                   ),
                 ),
@@ -151,7 +143,7 @@ class RequestsTabScreen extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F2167),
+                      backgroundColor: MomntColors.accent,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),

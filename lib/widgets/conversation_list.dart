@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/state/messages_controller.dart';
 import 'package:momnt/widgets/chat_avatar.dart';
 import 'package:provider/provider.dart';
@@ -97,7 +98,7 @@ class ConversationList extends StatelessWidget {
           child: ListTile(
             key: ValueKey('conversation-${chat.contact.id}'),
             selected: selectionMode && selectedIds.contains(chat.contact.id),
-            selectedTileColor: const Color(0xFFE8ECF5),
+            selectedTileColor: MomntColors.soft,
             onTap: () => selectionMode
                 ? onToggleSelection?.call(chat.contact.id)
                 : onOpen(chat.contact.id),
@@ -121,7 +122,7 @@ class ConversationList extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F2167),
+                color: MomntColors.accent,
               ),
             ),
             subtitle: Text(
@@ -129,7 +130,9 @@ class ConversationList extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: chat.unreadCount > 0 ? Colors.black87 : Colors.grey,
+                color: chat.unreadCount > 0
+                    ? MomntColors.ink
+                    : MomntColors.muted,
               ),
             ),
             trailing: Row(
@@ -141,7 +144,10 @@ class ConversationList extends StatelessWidget {
                   children: [
                     Text(
                       _timeLabel(context, chat.lastMessage?.createdAt),
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: MomntColors.muted,
+                      ),
                     ),
                     if (chat.isPinned || chat.unreadCount > 0) ...[
                       const SizedBox(height: 4),
@@ -154,7 +160,7 @@ class ConversationList extends StatelessWidget {
                               child: Icon(
                                 Icons.push_pin,
                                 size: 14,
-                                color: Color(0xFF0F2167),
+                                color: MomntColors.accent,
                               ),
                             ),
                           if (chat.isPinned && chat.unreadCount > 0)
@@ -169,7 +175,7 @@ class ConversationList extends StatelessWidget {
                                 horizontal: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF0F2167),
+                                color: MomntColors.accent,
                                 borderRadius: BorderRadius.circular(9),
                               ),
                               child: Text(

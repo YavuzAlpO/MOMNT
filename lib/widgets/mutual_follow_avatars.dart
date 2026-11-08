@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/models/mutual_follow_profile.dart';
 
 /// Arkadan görünen küçük fotoğraflarla tek grup simgesi ve profil önizlemesi.
@@ -128,7 +129,7 @@ class _ProfilePreview extends StatelessWidget {
             Text(
               'Takipleştiğin kişiler (${profiles.length})',
               style: const TextStyle(
-                color: Color(0xFF0F2167),
+                color: MomntColors.accent,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -180,12 +181,8 @@ class _ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final placeholder = ColoredBox(
-      color: const Color(0xFFE2E8F0),
-      child: Icon(
-        Icons.person,
-        color: const Color(0xFF0F2167),
-        size: size * 0.55,
-      ),
+      color: MomntColors.soft,
+      child: Icon(Icons.person, color: MomntColors.accent, size: size * 0.55),
     );
     return Semantics(
       image: true,
@@ -197,9 +194,7 @@ class _ProfileAvatar extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.white,
-          border: Border.all(
-            color: const Color(0xFF0F2167).withValues(alpha: 0.25),
-          ),
+          border: Border.all(color: MomntColors.accent.withValues(alpha: 0.25)),
         ),
         child: ClipOval(
           child: profile.avatarUrl == null

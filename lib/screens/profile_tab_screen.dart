@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/models/profile_info.dart';
 import 'package:momnt/services/demo_social_data.dart';
 import 'package:momnt/screens/edit_profile_screen.dart';
+import 'package:momnt/screens/profile_settings_screen.dart';
 import 'package:momnt/state/check_in_controller.dart';
 import 'package:momnt/widgets/active_check_in_card.dart';
 import 'package:momnt/widgets/check_in_sheet.dart';
@@ -36,41 +38,64 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
     });
   }
 
+  void _openSettings() {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => ProfileSettingsScreen(onEditProfile: _openEditProfile),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final checkIn = CheckInScope.of(context);
     final session = checkIn.session;
+    final textTheme = Theme.of(context).textTheme;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           const SizedBox(height: 20),
-          const CircleAvatar(
-            radius: 46,
-            backgroundImage: NetworkImage(
-              'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200',
+          SizedBox(
+            width: double.infinity,
+            child: Stack(
+              alignment: Alignment.topCenter,
+              children: [
+                const CircleAvatar(
+                  radius: 46,
+                  backgroundImage: NetworkImage(
+                    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200',
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: IconButton(
+                    tooltip: 'Ayarlar',
+                    onPressed: _openSettings,
+                    icon: const Icon(Icons.menu),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
           Text(
             _name,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0F2167),
-            ),
+            style: textTheme.headlineSmall,
+            textAlign: TextAlign.center,
           ),
           Text(
             '@$_username',
-            style: const TextStyle(color: Colors.grey, fontSize: 14),
+            style: textTheme.bodyMedium?.copyWith(color: MomntColors.muted),
           ),
           const SizedBox(height: 6),
-          Text(_bio, style: const TextStyle(fontSize: 14)),
+          Text(_bio, style: textTheme.bodyMedium, textAlign: TextAlign.center),
           const SizedBox(height: 4),
           Text(
             '📍 ${checkIn.lifetimeCheckInCount} check-in',
-            style: const TextStyle(color: Colors.grey, fontSize: 13),
+            style: const TextStyle(color: MomntColors.muted, fontSize: 13),
           ),
           if (session != null) ...[
             const SizedBox(height: 16),
@@ -94,25 +119,15 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
                   ),
                   child: const Text(
                     'Profili Düzenle',
-                    style: TextStyle(color: Color(0xFF0F2167)),
+                    style: TextStyle(color: MomntColors.accent),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              OutlinedButton(
+              IconButton(
+                tooltip: 'Pinler',
                 onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.location_on_outlined, size: 16),
-                    SizedBox(width: 4),
-                    Text('Pinler'),
-                  ],
-                ),
+                icon: const Icon(Icons.location_on_outlined),
               ),
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/models/check_in_duration.dart';
 import 'package:momnt/models/check_in_status.dart';
 import 'package:momnt/models/venue_model.dart';
@@ -143,7 +144,7 @@ class _CheckInSheetState extends State<CheckInSheet> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: MomntColors.outline,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -154,7 +155,7 @@ class _CheckInSheetState extends State<CheckInSheet> {
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F2167),
+                color: MomntColors.accent,
               ),
               textAlign: TextAlign.center,
             ),
@@ -163,7 +164,7 @@ class _CheckInSheetState extends State<CheckInSheet> {
               widget.isEditing
                   ? 'Statünü ve süreni güncelle'
                   : 'Check-in yapmak üzeresin',
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              style: const TextStyle(color: MomntColors.muted, fontSize: 13),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -186,12 +187,12 @@ class _CheckInSheetState extends State<CheckInSheet> {
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? const Color(0xFF0F2167).withValues(alpha: 0.08)
-                          : Colors.grey[100],
+                          ? MomntColors.accent.withValues(alpha: 0.08)
+                          : MomntColors.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
-                            ? const Color(0xFF0F2167)
+                            ? MomntColors.accent
                             : Colors.transparent,
                         width: 1.5,
                       ),
@@ -201,8 +202,8 @@ class _CheckInSheetState extends State<CheckInSheet> {
                         Icon(
                           status.icon,
                           color: isSelected
-                              ? const Color(0xFF0F2167)
-                              : Colors.black54,
+                              ? MomntColors.accent
+                              : MomntColors.muted,
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -214,8 +215,8 @@ class _CheckInSheetState extends State<CheckInSheet> {
                                   ? FontWeight.bold
                                   : FontWeight.normal,
                               color: isSelected
-                                  ? const Color(0xFF0F2167)
-                                  : Colors.black87,
+                                  ? MomntColors.accent
+                                  : MomntColors.ink,
                             ),
                           ),
                         ),
@@ -224,8 +225,8 @@ class _CheckInSheetState extends State<CheckInSheet> {
                               ? Icons.radio_button_checked
                               : Icons.radio_button_off,
                           color: isSelected
-                              ? const Color(0xFF0F2167)
-                              : Colors.grey,
+                              ? MomntColors.accent
+                              : MomntColors.muted,
                           size: 20,
                         ),
                       ],
@@ -249,10 +250,9 @@ class _CheckInSheetState extends State<CheckInSheet> {
                     ChoiceChip(
                       label: Text(duration.label),
                       selected: _selectedDuration == duration,
-                      selectedColor: const Color(0xFF0F2167)
-                          .withValues(alpha: 0.12),
+                      selectedColor: MomntColors.accent.withValues(alpha: 0.12),
                       labelStyle: TextStyle(
-                        color: const Color(0xFF0F2167),
+                        color: MomntColors.accent,
                         fontWeight: _selectedDuration == duration
                             ? FontWeight.w800
                             : FontWeight.w500,
@@ -268,7 +268,7 @@ class _CheckInSheetState extends State<CheckInSheet> {
               Text(
                 'Check-in toplam en fazla ${MomntLocationRules.sessionTimeout.inHours} saat sürer.'
                 '${widget.isEditing ? ' Farklı bir süre seçersen yeni süre şimdi başlar.' : ''}',
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                style: const TextStyle(color: MomntColors.muted, fontSize: 12),
               ),
             ],
             const SizedBox(height: 16),
@@ -281,7 +281,7 @@ class _CheckInSheetState extends State<CheckInSheet> {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0F2167),
+                backgroundColor: MomntColors.accent,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

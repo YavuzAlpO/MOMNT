@@ -11,24 +11,18 @@ import 'package:provider/provider.dart';
 
 enum CheckOutReason { manual, autoExit, timeout }
 
-/// K-145: varsayımsal konum kontrolü — mekânda mı?
 typedef VenuePresenceCheck = Future<bool> Function(CheckInSession session);
-
-/// Varsayılan demo kontrolü: kullanıcı hâlâ mekânda kabul edilir.
-Future<bool> hypotheticalIsStillAtVenue(CheckInSession session) async {
-  return true;
-}
 
 /// Provider / Cubit ile paylaşılabilen check-in yaşam döngüsü (ChangeNotifier).
 class CheckInController extends ChangeNotifier {
   CheckInController({
     LocationService locationService = const LocationService(),
-    VenuePresenceCheck presenceCheck = hypotheticalIsStillAtVenue,
+    VenuePresenceCheck? presenceCheck,
   }) : _locationService = locationService,
        _presenceCheck = presenceCheck;
 
   final LocationService _locationService;
-  final VenuePresenceCheck _presenceCheck;
+  final VenuePresenceCheck? _presenceCheck;
 
   CheckInSession? session;
   String? lastError;
@@ -36,6 +30,11 @@ class CheckInController extends ChangeNotifier {
   int lifetimeCheckInCount = 0;
   Timer? _timeoutTimer;
   Timer? _extendTimer;
+  Timer? _locationTimer;
+  bool _tracksLiveLocation = false;
+  bool _foreground = true;
+  bool _checkingLocation = false;
+  bool _disposed = false;
 
   bool get isCheckedIn => session != null;
 
@@ -63,6 +62,7 @@ class CheckInController extends ChangeNotifier {
     if (isCheckedInAt(venue.id)) {
       return updateStatus(status, duration: duration, now: clock);
     }
+    _stopLocationMonitoring();
     final isNewSession = session?.isAtVenue(venue.id) != true;
     final checkedInAt = isNewSession ? clock : session!.checkedInAt;
     final selectedDuration = isNewSession ? duration : session!.duration;
@@ -98,30 +98,41 @@ class CheckInController extends ChangeNotifier {
     required CheckInStatus status,
     CheckInDuration duration = CheckInDuration.defaultValue,
   }) async {
+    if (_disposed) return false;
+    final previous = session;
     lastError = null;
     try {
       final position = await _locationService.getCurrentPosition();
+      if (_disposed || !identical(session, previous)) return false;
       final distance = _locationService.distanceBetweenMeters(
         startLatitude: position.latitude,
         startLongitude: position.longitude,
         endLatitude: venue.latitude,
         endLongitude: venue.longitude,
       );
-      return tryCheckIn(
+      final started = tryCheckIn(
         venue: venue,
         status: status,
         distanceMeters: distance,
         duration: duration,
       );
+      if (started && session != null && !_disposed) {
+        _tracksLiveLocation = true;
+        _startLocationTimer();
+      }
+      return started;
     } on LocationServiceDisabledException {
+      if (_disposed || !identical(session, previous)) return false;
       lastError = 'Konum servisi kapalı. Lütfen cihaz ayarlarından aç.';
       notifyListeners();
       return false;
     } on LocationPermissionException catch (error) {
+      if (_disposed || !identical(session, previous)) return false;
       lastError = error.message;
       notifyListeners();
       return false;
     } catch (error) {
+      if (_disposed || !identical(session, previous)) return false;
       lastError = 'Konum alınamadı: $error';
       notifyListeners();
       return false;
@@ -170,13 +181,15 @@ class CheckInController extends ChangeNotifier {
         : requested;
   }
 
-  /// K-145: süre bitimine 5 dk kala mekândaysa oturumu 1 saat uzatır.
+  /// Süre bitimine 5 dk kala güncel konum doğrulanırsa oturumu uzatır.
   Future<bool> checkAutoExtend({DateTime? now, bool? stillAtVenue}) async {
     final current = session;
     if (current == null) return false;
     if (!current.isWithinAutoExtendWindow(now: now)) return false;
 
-    final present = stillAtVenue ?? await _presenceCheck(current);
+    final present =
+        stillAtVenue ??
+        await (_presenceCheck?.call(current) ?? _isStillAtVenue(current));
     if (!identical(session, current)) return false;
     if (!present) return false;
 
@@ -193,10 +206,100 @@ class CheckInController extends ChangeNotifier {
       expiresAt: expiresAt,
       autoExtendCount: current.autoExtendCount + 1,
     );
-    lastNotice = 'Mekânda olduğun için süre 1 saat uzatıldı.';
+    final added = expiresAt.difference(current.expiresAt!);
+    lastNotice = added == CheckInLifecycleRules.autoExtendBy
+        ? 'Mekânda olduğun için süre 1 saat uzatıldı.'
+        : 'Süre 4 saatlik üst sınıra kadar uzatıldı.';
     _scheduleLifecycle(now: clock);
     notifyListeners();
     return true;
+  }
+
+  void setForeground(bool foreground) {
+    _foreground = foreground;
+    if (!foreground) {
+      _locationTimer?.cancel();
+      _locationTimer = null;
+      return;
+    }
+    _startLocationTimer();
+    unawaited(refreshActiveCheckIn());
+  }
+
+  void _startLocationTimer() {
+    if (!_foreground || !_tracksLiveLocation || _locationTimer != null) return;
+    _locationTimer = Timer.periodic(
+      CheckInLifecycleRules.locationCheckInterval,
+      (_) => unawaited(refreshActiveCheckIn()),
+    );
+  }
+
+  void _stopLocationMonitoring() {
+    _tracksLiveLocation = false;
+    _locationTimer?.cancel();
+    _locationTimer = null;
+  }
+
+  Future<void> refreshActiveCheckIn() async {
+    final current = session;
+    if (current == null || _disposed) return;
+    if (current.isExpired() ||
+        _locationService.isSessionTimedOut(current.checkedInAt)) {
+      checkOut(reason: CheckOutReason.timeout);
+      return;
+    }
+    if (!_foreground || !_tracksLiveLocation || _checkingLocation) return;
+
+    _checkingLocation = true;
+    try {
+      final position = await _freshPosition();
+      if (!identical(session, current) || !_foreground) return;
+      if (position == null) return;
+      final distance = _distanceToVenue(current, position);
+      await evaluateSession(
+        distanceMeters: distance,
+        stillAtVenue: _locationService.canCheckIn(distance + position.accuracy),
+      );
+    } finally {
+      _checkingLocation = false;
+    }
+  }
+
+  Future<Position?> _freshPosition() async {
+    try {
+      final position = await _locationService.getActiveCheckInPosition();
+      if (DateTime.now().difference(position.timestamp).abs() >
+              CheckInLifecycleRules.maxPositionAge ||
+          !position.accuracy.isFinite ||
+          position.accuracy <= 0 ||
+          !position.latitude.isFinite ||
+          !position.longitude.isFinite) {
+        return null;
+      }
+      return position;
+    } catch (_) {
+      // Konum doğrulanamadığında oturumun mevcut bitişi geçerlidir.
+      return null;
+    }
+  }
+
+  Future<bool> _isStillAtVenue(CheckInSession current) async {
+    if (!_foreground) return false;
+    final position = await _freshPosition();
+    return position != null &&
+        _foreground &&
+        _locationService.canCheckIn(
+          _distanceToVenue(current, position) + position.accuracy,
+        );
+  }
+
+  double _distanceToVenue(CheckInSession current, Position position) {
+    return _locationService.distanceBetweenMeters(
+      startLatitude: position.latitude,
+      startLongitude: position.longitude,
+      endLatitude: current.venueLatitude,
+      endLongitude: current.venueLongitude,
+    );
   }
 
   /// K-147: 1 km otomatik çıkış; süre dolduysa timeout; 5 dk kala uzatma dener.
@@ -227,6 +330,7 @@ class CheckInController extends ChangeNotifier {
   void checkOut({CheckOutReason reason = CheckOutReason.manual}) {
     if (session == null) return;
     session = null;
+    _stopLocationMonitoring();
     _timeoutTimer?.cancel();
     _extendTimer?.cancel();
     _timeoutTimer = null;
@@ -235,7 +339,7 @@ class CheckInController extends ChangeNotifier {
     lastError = switch (reason) {
       CheckOutReason.manual => null,
       CheckOutReason.autoExit =>
-        'Mekana 1 km’den fazla uzaklaştığın için check-out yapıldı.',
+        'Mekândan ${(MomntLocationRules.autoExitDistanceMeters / 1000).round()} km’den fazla uzaklaştığın için check-in kapandı.',
       CheckOutReason.timeout => 'Check-in süresi doldu.',
     };
     notifyListeners();
@@ -258,23 +362,31 @@ class CheckInController extends ChangeNotifier {
     final remaining = current.expiresAt!.difference(clock);
     final untilExtendWindow =
         remaining - CheckInLifecycleRules.autoExtendWindow;
-    if (untilExtendWindow > Duration.zero) {
+    final hardDeadline = current.checkedInAt.add(
+      MomntLocationRules.sessionTimeout,
+    );
+    if (untilExtendWindow > Duration.zero &&
+        current.expiresAt!.isBefore(hardDeadline)) {
       _extendTimer = Timer(untilExtendWindow, () {
-        unawaited(checkAutoExtend());
+        if (_tracksLiveLocation) {
+          unawaited(refreshActiveCheckIn());
+        } else {
+          unawaited(checkAutoExtend());
+        }
       });
     }
 
-    _timeoutTimer = Timer(remaining, () {
-      final live = session;
-      if (live == null) return;
-      if (live.isExpired()) {
-        checkOut(reason: CheckOutReason.timeout);
-      }
-    });
+    _timeoutTimer = Timer(
+      remaining,
+      () => checkOut(reason: CheckOutReason.timeout),
+    );
   }
 
   @override
   void dispose() {
+    _disposed = true;
+    session = null;
+    _stopLocationMonitoring();
     _timeoutTimer?.cancel();
     _extendTimer?.cancel();
     super.dispose();

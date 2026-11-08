@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/models/chat_attachment.dart';
 import 'package:momnt/models/chat_message.dart';
 import 'package:momnt/state/messages_controller.dart';
@@ -53,8 +54,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final chat = context.watch<MessagesController>().conversation(
-      widget.contactId,
+    final chat = context.select<MessagesController, ChatConversation?>(
+      (controller) => controller.conversation(widget.contactId),
     );
     if (chat == null) {
       return Scaffold(
@@ -83,7 +84,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   Text(
                     chat.contact.username,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: MomntColors.muted,
+                    ),
                   ),
                 ],
               ),
@@ -97,11 +101,11 @@ class _ChatScreenState extends State<ChatScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(10),
-              color: const Color(0xFFE8ECF5),
+              color: MomntColors.soft,
               child: const Text(
                 'Demo sohbet: mesajlar karşı tarafa iletilmez ve uygulama kapanınca silinir.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: Color(0xFF0F2167)),
+                style: TextStyle(fontSize: 12, color: MomntColors.accent),
               ),
             ),
             Expanded(
@@ -151,6 +155,7 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final time = TimeOfDay.fromDateTime(message.createdAt).format(context);
+    final storyReply = message.storyReply;
     return Align(
       alignment: message.isMine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -160,14 +165,20 @@ class _MessageBubble extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: message.isMine
-              ? const Color(0xFF0F2167)
-              : const Color(0xFFE8ECF5),
+          color: message.isMine ? MomntColors.accent : MomntColors.soft,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            if (storyReply != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _StoryReplyQuote(
+                  story: storyReply,
+                  color: message.isMine ? Colors.white : MomntColors.ink,
+                ),
+              ),
             if (message.attachment != null) ...[
               ChatAttachmentView(
                 attachment: message.attachment!,
@@ -180,7 +191,7 @@ class _MessageBubble extends StatelessWidget {
               SelectableText(
                 message.text,
                 style: TextStyle(
-                  color: message.isMine ? Colors.white : Colors.black87,
+                  color: message.isMine ? Colors.white : MomntColors.ink,
                 ),
               ),
             const SizedBox(height: 4),
@@ -193,7 +204,7 @@ class _MessageBubble extends StatelessWidget {
                   time,
                   style: TextStyle(
                     fontSize: 10,
-                    color: message.isMine ? Colors.white70 : Colors.black54,
+                    color: message.isMine ? Colors.white70 : MomntColors.muted,
                   ),
                 ),
                 if (message.readAt != null)
@@ -209,7 +220,7 @@ class _MessageBubble extends StatelessWidget {
                           size: 13,
                           color: message.isMine
                               ? const Color(0xFF90CAF9)
-                              : const Color(0xFF0F2167),
+                              : MomntColors.accent,
                         ),
                         const SizedBox(width: 3),
                         Text(
@@ -218,7 +229,7 @@ class _MessageBubble extends StatelessWidget {
                             fontSize: 10,
                             color: message.isMine
                                 ? const Color(0xFF90CAF9)
-                                : const Color(0xFF0F2167),
+                                : MomntColors.accent,
                           ),
                         ),
                       ],
@@ -244,6 +255,63 @@ class _MessageBubble extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StoryReplyQuote extends StatelessWidget {
+  const _StoryReplyQuote({required this.story, required this.color});
+
+  final StoryReply story;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Image.network(
+              story.imageUrl,
+              width: 36,
+              height: 36,
+              fit: BoxFit.cover,
+              excludeFromSemantics: true,
+              errorBuilder: (_, _, _) => SizedBox(
+                width: 36,
+                height: 36,
+                child: Icon(Icons.image_outlined, color: color),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hikâye yanıtı',
+                  style: TextStyle(color: color, fontSize: 12),
+                ),
+                Text(
+                  story.caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: color, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

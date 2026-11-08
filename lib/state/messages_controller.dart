@@ -91,6 +91,9 @@ class MessagesController extends ChangeNotifier {
   List<ChatConversation> get archivedConversations =>
       _sorted(_conversations.values.where((chat) => chat.isArchived));
 
+  int get unreadMessageCount =>
+      _conversations.values.fold(0, (total, chat) => total + chat.unreadCount);
+
   List<ChatConversation> _sorted(Iterable<ChatConversation> chats) {
     final result = chats.toList();
     result.sort((a, b) {
@@ -237,9 +240,16 @@ class MessagesController extends ChangeNotifier {
     String text, {
     DateTime? now,
     ChatAttachment? attachment,
+    StoryReply? storyReply,
   }) {
     final trimmed = text.trim();
-    final current = _conversations[contactId];
+    var current = _conversations[contactId];
+    if (current == null && storyReply != null) {
+      final contact = contacts
+          .where((item) => item.id == contactId)
+          .firstOrNull;
+      if (contact != null) current = ChatConversation(contact: contact);
+    }
     if ((trimmed.isEmpty && attachment == null) || current == null) {
       return false;
     }
@@ -254,12 +264,13 @@ class MessagesController extends ChangeNotifier {
       createdAt: now ?? DateTime.now(),
       isMine: true,
       attachment: attachment,
+      storyReply: storyReply,
     );
     _conversations[contactId] = current.copyWith(
-      unreadCount: 0,
+      unreadCount: storyReply == null ? 0 : current.unreadCount,
       messages: List.unmodifiable([...current.messages, message]),
     );
-    _drafts.remove(contactId);
+    if (storyReply == null) _drafts.remove(contactId);
     notifyListeners();
     return true;
   }

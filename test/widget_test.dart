@@ -1,13 +1,24 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:momnt/main.dart';
 import 'package:momnt/models/check_in_duration.dart';
 import 'package:momnt/models/check_in_status.dart';
 import 'package:momnt/models/venue_model.dart';
+import 'package:momnt/screens/home_tab_screen.dart';
+import 'package:momnt/screens/map_tab_screen.dart';
+import 'package:momnt/screens/messages_tab_screen.dart';
+import 'package:momnt/screens/profile_tab_screen.dart';
+import 'package:momnt/screens/requests_tab_screen.dart';
+import 'package:momnt/services/demo_social_data.dart';
 import 'package:momnt/services/location_service.dart';
 import 'package:momnt/services/venue_service.dart';
 import 'package:momnt/state/check_in_controller.dart';
+import 'package:momnt/state/messages_controller.dart';
 import 'package:momnt/widgets/active_check_in_card.dart';
 import 'package:momnt/widgets/check_in_sheet.dart';
+import 'package:provider/provider.dart';
 
 const _venue = Venue(
   id: 'moda-kahve',
@@ -19,6 +30,118 @@ const _venue = Venue(
 );
 
 void main() {
+  testWidgets('alt menü rozeti toplam okunmamış mesaj sayısını gösterir', (
+    tester,
+  ) async {
+    final first = demoMutualFollows[0];
+    final second = demoMutualFollows[1];
+    final messages = MessagesController(
+      contacts: demoMutualFollows,
+      initialConversations: [
+        ChatConversation(contact: first, unreadCount: 98),
+        ChatConversation(contact: second, unreadCount: 3, isArchived: true),
+      ],
+    );
+    addTearDown(messages.dispose);
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: messages,
+        child: const MaterialApp(home: MainNavigationScreen()),
+      ),
+    );
+
+    final badge = find.byType(Badge);
+    expect(find.descendant(of: badge, matching: find.text('99+')), findsOne);
+
+    messages.openConversation(first.id);
+    await tester.pump();
+    expect(find.descendant(of: badge, matching: find.text('3')), findsOne);
+
+    messages.markAllRead();
+    await tester.pump();
+    expect(badge, findsNothing);
+  });
+
+  testWidgets('sekmeler ilk ziyarette yüklenir ve arama durumu korunur', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MomntApp());
+    expect(find.byType(MapTabScreen), findsOneWidget);
+    for (final screen in [
+      HomeTabScreen,
+      RequestsTabScreen,
+      MessagesTabScreen,
+      ProfileTabScreen,
+    ]) {
+      expect(find.byType(screen, skipOffstage: false), findsNothing);
+    }
+
+    await tester.tap(find.text('Mesajlar'));
+    await tester.pumpAndSettle();
+    final search = find.byKey(const Key('conversation-search'));
+    await tester.enterText(search, 'Mert');
+
+    await tester.tap(find.text('Harita'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mesajlar'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(search).controller!.text, 'Mert');
+  });
+
+  testWidgets('komşu sekme sürüklerken görünür ve bırakınca yerine oturur', (
+    tester,
+  ) async {
+    const swipe = Offset(-520, 0);
+    const content = Offset(650, 350);
+    double? page() =>
+        tester.widget<PageView>(find.byType(PageView)).controller!.page;
+
+    final reportError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      // The widget test HTTP client returns 400 for demo images.
+      final error = details.exception;
+      if (error is NetworkImageLoadException && error.statusCode == 400) return;
+      reportError?.call(details);
+    };
+
+    try {
+      await tester.pumpWidget(const MomntApp());
+      expect(page(), 1);
+
+      final gesture = await tester.startGesture(const Offset(120, 350));
+      await gesture.moveBy(const Offset(180, 0));
+      await tester.pump();
+      expect(page(), allOf(greaterThan(0.5), lessThan(1)));
+      expect(tester.getRect(find.byType(HomeTabScreen)).right, greaterThan(0));
+      expect(tester.getRect(find.byType(MapTabScreen)).left, greaterThan(0));
+      await gesture.moveBy(const Offset(340, 0));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(page(), 0);
+
+      final stories = find.byKey(const Key('home-stories-area'));
+      await tester.dragFrom(
+        tester.getCenter(stories),
+        const Offset(-180, 0),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pumpAndSettle();
+      expect(page(), 0);
+
+      for (final index in [1, 2, 3]) {
+        await tester.dragFrom(content, swipe, kind: PointerDeviceKind.mouse);
+        await tester.pumpAndSettle();
+        expect(page(), index);
+      }
+
+      await tester.dragFrom(content, swipe);
+      await tester.pumpAndSettle();
+      expect(page(), 3);
+    } finally {
+      FlutterError.onError = reportError;
+    }
+  });
+
   testWidgets('check-in sheet statü ve süre seçimini döner', (tester) async {
     CheckInSelection? selected;
 

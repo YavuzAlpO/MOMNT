@@ -40,7 +40,7 @@ class MapScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                   child: Material(
                     elevation: 4,
-                    shadowColor: MomntColors.navy.withValues(alpha: 0.12),
+                    shadowColor: MomntColors.ink.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(18),
                     child: TextField(
                       onChanged: controller.setSearchQuery,
@@ -48,10 +48,10 @@ class MapScreen extends StatelessWidget {
                         hintText: 'Mekân ara',
                         prefixIcon: const Icon(
                           Icons.search,
-                          color: MomntColors.navy,
+                          color: MomntColors.ink,
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: MomntColors.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18),
                           borderSide: BorderSide.none,
@@ -65,8 +65,8 @@ class MapScreen extends StatelessWidget {
                 right: 16,
                 bottom: selected == null ? 24 : 230,
                 child: FloatingActionButton.small(
-                  backgroundColor: Colors.white,
-                  foregroundColor: MomntColors.navy,
+                  backgroundColor: MomntColors.surface,
+                  foregroundColor: MomntColors.ink,
                   onPressed: controller.loadFromGps,
                   child: const Icon(Icons.my_location),
                 ),
@@ -80,8 +80,9 @@ class MapScreen extends StatelessWidget {
                       key: const Key('map-venue-card'),
                       nearby: selected,
                       onCheckIn: () async {
-                        final allowed =
-                            await controller.startCheckIn(selected.venue);
+                        final allowed = await controller.startCheckIn(
+                          selected.venue,
+                        );
                         if (!context.mounted) return;
                         if (!allowed) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -98,7 +99,7 @@ class MapScreen extends StatelessWidget {
                           venue: selected.venue,
                           distanceMeters:
                               controller.selected?.distanceMeters ??
-                                  selected.distanceMeters,
+                              selected.distanceMeters,
                         );
                       },
                     ),

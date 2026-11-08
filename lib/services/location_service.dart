@@ -22,6 +22,9 @@ abstract final class CheckInLifecycleRules {
 
   /// Mekândaysa süre bu kadar uzatılır (K-145).
   static const Duration autoExtendBy = Duration(hours: 1);
+
+  static const Duration locationCheckInterval = Duration(seconds: 30);
+  static const Duration maxPositionAge = Duration(seconds: 30);
 }
 
 class LocationPermissionException implements Exception {
@@ -79,8 +82,22 @@ class LocationService {
   Future<Position> getCurrentPosition() async {
     await ensureLocationPermission();
     return Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+    );
+  }
+
+  /// Aktif oturumu denetlerken yeniden izin istemez.
+  Future<Position> getActiveCheckInPosition() async {
+    if (!await isLocationServiceEnabled()) {
+      throw const LocationServiceDisabledException();
+    }
+    if (!await hasLocationPermission()) {
+      throw const LocationPermissionException('Konum izni gerekli.');
+    }
+    return Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 10),
       ),
     );
   }

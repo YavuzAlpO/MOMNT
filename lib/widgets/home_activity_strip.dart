@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/models/check_in_session.dart';
 import 'package:momnt/models/mutual_follow_profile.dart';
 import 'package:momnt/widgets/active_check_in_card.dart';
+import 'package:momnt/widgets/home_stories.dart';
 
 /// Check-in bittiğinde hikâye alanı kalan genişliği kendiliğinden devralır.
 class HomeActivityStrip extends StatelessWidget {
@@ -10,11 +12,13 @@ class HomeActivityStrip extends StatelessWidget {
     this.session,
     this.onManageCheckIn,
     this.mutualFollows = const [],
+    this.stories = const [],
   });
 
   final CheckInSession? session;
   final VoidCallback? onManageCheckIn;
   final List<MutualFollowProfile> mutualFollows;
+  final List<HomeStory> stories;
 
   @override
   Widget build(BuildContext context) {
@@ -42,33 +46,19 @@ class HomeActivityStrip extends StatelessWidget {
                 key: const Key('home-stories-area'),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  color: MomntColors.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: MomntColors.outline),
                 ),
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Hikâyeler',
-                      style: TextStyle(
-                        color: Color(0xFF0F2167),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(color: MomntColors.ink),
                     ),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Hikâyeler burada görünecek.',
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
+                    Expanded(child: HomeStories(stories: stories)),
                   ],
                 ),
               ),

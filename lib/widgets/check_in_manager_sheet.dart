@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/services/location_service.dart';
 import 'package:momnt/services/venue_service.dart';
 import 'package:momnt/state/check_in_controller.dart';
@@ -114,7 +115,7 @@ class _CheckInManagerSheetState extends State<CheckInManagerSheet> {
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F2167),
+                color: MomntColors.accent,
               ),
             ),
             const SizedBox(height: 16),

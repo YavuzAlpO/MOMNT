@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:momnt/models/chat_attachment.dart';
 import 'package:momnt/services/chat_media_service.dart';
@@ -224,7 +225,7 @@ class _ChatComposerState extends State<ChatComposer> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFFE8ECF5),
+                color: MomntColors.soft,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -360,13 +361,12 @@ class _ChatComposerState extends State<ChatComposer> {
                           onPressed: _busy ? null : _takePhoto,
                           icon: Icon(
                             Icons.camera_alt_outlined,
-                            color: const Color(0xFF0F2167)
-                                .withValues(alpha: 0.35),
+                            color: MomntColors.accent.withValues(alpha: 0.35),
                             size: 21,
                           ),
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: MomntColors.surface,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 12,

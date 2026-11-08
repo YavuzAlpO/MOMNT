@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/models/chat_attachment.dart';
 
 String attachmentDuration(Duration duration) =>
@@ -32,7 +33,7 @@ class _ChatAttachmentViewState extends State<ChatAttachmentView> {
   Duration _position = Duration.zero;
   bool _playing = false;
   bool _busy = false;
-  Color get _color => widget.isMine ? Colors.white : const Color(0xFF0F2167);
+  Color get _color => widget.isMine ? Colors.white : MomntColors.accent;
 
   @override
   void dispose() {
@@ -192,6 +193,7 @@ class _ChatAttachmentViewState extends State<ChatAttachmentView> {
           ),
         );
       }
+      const thumbnailWidth = 220.0;
       return InkWell(
         onTap: () => showDialog<void>(
           context: context,
@@ -232,7 +234,10 @@ class _ChatAttachmentViewState extends State<ChatAttachmentView> {
           child: Image.memory(
             attachment.bytes,
             height: 150,
-            width: 220,
+            width: thumbnailWidth,
+            cacheWidth:
+                (thumbnailWidth * MediaQuery.devicePixelRatioOf(context))
+                    .ceil(),
             fit: BoxFit.cover,
             errorBuilder: (_, _, _) => SizedBox(
               height: 64,

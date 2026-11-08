@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/models/check_in_status.dart';
 import 'package:momnt/services/demo_social_data.dart';
 import 'package:momnt/state/check_in_controller.dart';
 import 'package:momnt/widgets/home_activity_strip.dart';
 import 'package:momnt/widgets/check_in_manager_sheet.dart';
 import 'package:momnt/widgets/check_in_status_badge.dart';
-
-const _navy = Color(0xFF0F2167);
+import 'package:momnt/widgets/home_stories.dart';
 
 class HomeTabScreen extends StatelessWidget {
   const HomeTabScreen({super.key});
@@ -19,67 +19,76 @@ class HomeTabScreen extends StatelessWidget {
       venueArea: 'Moda Cad., Kadıköy',
       timeAgo: '8 dk önce',
       mood: CheckInStatus.drinkingCoffee,
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200',
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=75&w=144&h=144&fit=crop',
       venueImageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=400',
     ),
     _FeedCheckIn(
       name: 'Mert Yılmaz',
+      contactId: 'mert-yilmaz',
       username: '@mertyilmaz',
       venue: 'Espresso Lab',
       venueArea: 'Bahariye, Kadıköy',
       timeAgo: '22 dk önce',
       mood: CheckInStatus.socializing,
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200',
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=75&w=144&h=144&fit=crop',
       venueImageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=400',
     ),
     _FeedCheckIn(
       name: 'Selin Kaya',
+      contactId: 'selin-kaya',
       username: '@selinkaya',
       venue: 'Moda Kahve',
       venueArea: 'Moda Cad., Kadıköy',
       timeAgo: '41 dk önce',
       mood: CheckInStatus.openToMeet,
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=75&w=144&h=144&fit=crop',
       venueImageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=400',
     ),
     _FeedCheckIn(
       name: 'Mert Yılmaz',
+      contactId: 'mert-yilmaz',
       username: '@mertyilmaz',
       venue: 'Fenerbahçe Parkı',
       venueArea: 'Fenerbahçe, Kadıköy',
       timeAgo: '2 sa önce',
       mood: CheckInStatus.working,
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200',
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=75&w=144&h=144&fit=crop',
       venueImageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=400',
     ),
+  ];
+
+  static final _stories = [
+    for (final item in _feed.take(3))
+      HomeStory(
+        name: item.name,
+        contactId: item.contactId,
+        avatarUrl: item.avatarUrl,
+        imageUrl: item.venueImageUrl,
+        caption: '${item.venue} · ${item.venueArea}',
+      ),
   ];
 
   @override
   Widget build(BuildContext context) {
     final session = CheckInScope.of(context).session;
+    final textTheme = Theme.of(context).textTheme;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Ana Sayfa',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: _navy,
-            ),
-          ),
+          Text('Ana Sayfa', style: textTheme.headlineSmall),
           const SizedBox(height: 4),
           Text(
             'Arkadaşlarının anlık check-in’leri',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            style: textTheme.bodyMedium?.copyWith(color: MomntColors.muted),
           ),
           const SizedBox(height: 16),
           HomeActivityStrip(
             session: session,
             mutualFollows: demoMutualFollows,
+            stories: _stories,
             onManageCheckIn: () => showCheckInManager(context),
           ),
           const SizedBox(height: 16),
@@ -100,6 +109,7 @@ class HomeTabScreen extends StatelessWidget {
 class _FeedCheckIn {
   const _FeedCheckIn({
     required this.name,
+    this.contactId,
     required this.username,
     required this.venue,
     required this.venueArea,
@@ -110,6 +120,7 @@ class _FeedCheckIn {
   });
 
   final String name;
+  final String? contactId;
   final String username;
   final String venue;
   final String venueArea;
@@ -126,9 +137,13 @@ class _FeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final metadataStyle = textTheme.bodySmall?.copyWith(
+      color: MomntColors.muted,
+    );
     return Card(
       elevation: 2,
-      shadowColor: _navy.withOpacity(0.12),
+      shadowColor: MomntColors.accent.withOpacity(0.12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -142,7 +157,7 @@ class _FeedCard extends StatelessWidget {
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: _navy, width: 2),
+                    border: Border.all(color: MomntColors.accent, width: 2),
                   ),
                   child: CircleAvatar(
                     radius: 24,
@@ -154,41 +169,25 @@ class _FeedCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        item.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: _navy,
-                        ),
-                      ),
-                      Text(
-                        item.username,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
-                      ),
+                      Text(item.name, style: textTheme.titleMedium),
+                      Text(item.username, style: metadataStyle),
                     ],
                   ),
                 ),
-                Text(
-                  item.timeAgo,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
+                Text(item.timeAgo, style: metadataStyle),
               ],
             ),
             const SizedBox(height: 12),
             Text.rich(
               TextSpan(
-                style: const TextStyle(fontSize: 14, color: Colors.black87),
+                style: const TextStyle(fontSize: 14, color: MomntColors.ink),
                 children: [
                   const TextSpan(text: 'Check-in yaptı: '),
                   TextSpan(
                     text: item.venue,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: _navy,
+                      color: MomntColors.accent,
                     ),
                   ),
                 ],

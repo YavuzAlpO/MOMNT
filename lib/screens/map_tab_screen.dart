@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-const _navy = Color(0xFF0F2167);
+import 'package:momnt/theme/momnt_theme.dart';
 
 class MapTabScreen extends StatelessWidget {
   const MapTabScreen({super.key});
@@ -10,9 +9,9 @@ class MapTabScreen extends StatelessWidget {
     return Stack(
       children: [
         Container(
-          color: const Color(0xFFE5E3DF),
+          color: MomntColors.mapFill,
           child: const Center(
-            child: Icon(Icons.map, size: 120, color: Colors.black12),
+            child: Icon(Icons.map, size: 120, color: MomntColors.outline),
           ),
         ),
         Positioned(
@@ -27,7 +26,7 @@ class MapTabScreen extends StatelessWidget {
             child: const TextField(
               decoration: InputDecoration(
                 hintText: 'Mekân ara',
-                prefixIcon: Icon(Icons.search, color: _navy),
+                prefixIcon: Icon(Icons.search, color: MomntColors.accent),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 16,
@@ -64,8 +63,11 @@ class MapTabScreen extends StatelessWidget {
                           errorBuilder: (_, _, _) => Container(
                             width: 60,
                             height: 60,
-                            color: const Color(0xFFE2E8F0),
-                            child: const Icon(Icons.local_cafe, color: _navy),
+                            color: MomntColors.soft,
+                            child: const Icon(
+                              Icons.local_cafe,
+                              color: MomntColors.accent,
+                            ),
                           ),
                         ),
                       ),
@@ -79,14 +81,14 @@ class MapTabScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
-                                color: _navy,
+                                color: MomntColors.accent,
                               ),
                             ),
                             SizedBox(height: 2),
                             Text(
                               '24 kişi · 2 arkadaşın burada',
                               style: TextStyle(
-                                color: Colors.grey,
+                                color: MomntColors.muted,
                                 fontSize: 13,
                               ),
                             ),
@@ -94,7 +96,7 @@ class MapTabScreen extends StatelessWidget {
                             Text(
                               '📍 Moda Cad., Kadıköy',
                               style: TextStyle(
-                                color: Colors.black54,
+                                color: MomntColors.muted,
                                 fontSize: 12,
                               ),
                             ),

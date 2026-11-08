@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/models/mutual_follow_profile.dart';
 
 class ChatAvatar extends StatelessWidget {
@@ -9,8 +10,8 @@ class ChatAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const fallback = ColoredBox(
-      color: Color(0xFFE2E8F0),
-      child: Icon(Icons.person, color: Color(0xFF0F2167)),
+      color: MomntColors.soft,
+      child: Icon(Icons.person, color: MomntColors.accent),
     );
     return SizedBox.square(
       dimension: size,

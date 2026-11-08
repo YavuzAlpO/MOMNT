@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:momnt/theme/momnt_theme.dart';
 import 'package:momnt/screens/chat_screen.dart';
 import 'package:momnt/state/messages_controller.dart';
 import 'package:momnt/widgets/chat_avatar.dart';
@@ -41,7 +42,7 @@ class _MessagesTabScreenState extends State<MessagesTabScreen> {
       PopupMenuButton<_MessagesMenuAction>(
         key: const Key('messages-menu'),
         tooltip: 'Mesaj menüsü',
-        icon: const Icon(Icons.menu, color: Color(0xFF0F2167)),
+        icon: const Icon(Icons.menu, color: MomntColors.accent),
         onSelected: (action) {
           if (action == _MessagesMenuAction.readAll) {
             controller.markAllRead();
@@ -204,6 +205,7 @@ class _MessagesTabScreenState extends State<MessagesTabScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<MessagesController>();
+    final textTheme = Theme.of(context).textTheme;
     final chats = controller.searchConversations(
       _search.text,
       archived: widget.archived,
@@ -221,15 +223,8 @@ class _MessagesTabScreenState extends State<MessagesTabScreen> {
           if (!widget.archived)
             Row(
               children: [
-                const Expanded(
-                  child: Text(
-                    'Mesajlar',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F2167),
-                    ),
-                  ),
+                Expanded(
+                  child: Text('Mesajlar', style: textTheme.headlineSmall),
                 ),
                 if (!_selecting)
                   IconButton(
@@ -265,7 +260,7 @@ class _MessagesTabScreenState extends State<MessagesTabScreen> {
                       },
                     ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: MomntColors.surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -279,7 +274,7 @@ class _MessagesTabScreenState extends State<MessagesTabScreen> {
                 key: const Key('archived-conversations'),
                 leading: const Icon(
                   Icons.archive_outlined,
-                  color: Color(0xFF0F2167),
+                  color: MomntColors.accent,
                 ),
                 title: const Text('Arşivlenmiş sohbetler'),
                 trailing: Row(
